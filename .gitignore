@@ -1,6 +1,9 @@
 # temp folder
 tmp
 
+# Local runtime data (sqlite, install scripts, secrets)
+.data/
+
 # Frontend asset
 web/dist
 
