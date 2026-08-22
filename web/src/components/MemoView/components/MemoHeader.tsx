@@ -12,7 +12,7 @@ import type { User } from "@/types/proto/api/v1/user_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { convertVisibilityToString } from "@/utils/memo";
 import MemoActionMenu from "../../MemoActionMenu";
-import { ReactionSelector } from "../../MemoReactionListView";
+import { QuickReactions, ReactionSelector } from "../../MemoReactionListView";
 import UserAvatar from "../../UserAvatar";
 import VisibilityIcon from "../../VisibilityIcon";
 import { useMemoActions } from "../hooks";
@@ -71,11 +71,14 @@ const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, sh
 
       <div className="flex flex-row justify-end items-center select-none shrink-0 gap-2">
         {currentUser && !isArchived && (
-          <ReactionSelector
-            className={cn("border-none w-auto h-auto", reactionSelectorOpen && "block!", "block sm:hidden sm:group-hover:block")}
-            memo={memo}
-            onOpenChange={setReactionSelectorOpen}
-          />
+          <div className={cn("flex flex-row items-center gap-0.5", reactionSelectorOpen ? "flex!" : "sm:hidden sm:group-hover:flex")}>
+            <QuickReactions memo={memo} />
+            <ReactionSelector
+              className="border-none w-auto h-auto"
+              memo={memo}
+              onOpenChange={setReactionSelectorOpen}
+            />
+          </div>
         )}
 
         {showVisibility && memo.visibility !== Visibility.PRIVATE && (
