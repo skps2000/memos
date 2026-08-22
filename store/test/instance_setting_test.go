@@ -161,7 +161,7 @@ func TestInstanceSettingMemoRelatedSetting(t *testing.T) {
 	memoSetting, err := ts.GetInstanceMemoRelatedSetting(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, memoSetting)
-	require.GreaterOrEqual(t, memoSetting.ContentLengthLimit, int32(store.DefaultContentLengthLimit))
+	require.Equal(t, int32(store.DefaultContentLengthLimit), memoSetting.ContentLengthLimit)
 	require.NotEmpty(t, memoSetting.Reactions)
 
 	// Set custom memo related setting
@@ -552,6 +552,7 @@ func TestInstanceSettingEdgeCases(t *testing.T) {
 	memoSetting, err := ts.GetInstanceMemoRelatedSetting(ctx)
 	require.NoError(t, err)
 	require.Equal(t, unicodeReactions, memoSetting.Reactions)
+	require.Equal(t, int32(1000), memoSetting.ContentLengthLimit, "stored content length limit must be respected without clamping")
 
 	ts.Close()
 }
