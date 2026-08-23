@@ -34,7 +34,8 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
 
   // Per-memo user-resized height: drag the bottom-right handle to size a card,
   // the result is persisted per memo and reapplied every time that memo shows.
-  const { cardRef, cardHeight, resizing, handleResizePointerDown, resetCardHeight } = useMemoCardHeight(memoData.name);
+  const { cardRef, cardHeight, resizing, handleResizePointerDown, handleResizePointerMove, handleResizePointerUp, resetCardHeight } =
+    useMemoCardHeight(memoData.name);
 
   // Blur content when any tag has blur_content enabled in the current user's tag settings.
   const [showBlurredContent, setShowBlurredContent] = useState(false);
@@ -148,10 +149,13 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
           aria-label="Resize memo card"
           title="Drag to resize / double-click to reset"
           onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+          onPointerCancel={handleResizePointerUp}
           onDoubleClick={resetCardHeight}
           className={cn(
             "absolute bottom-0.5 right-1 z-10 flex h-5 w-5 items-center justify-center gap-0.5 rounded-sm",
-            "cursor-ns-resize touch-none hover:bg-secondary/60",
+            "cursor-nwse-resize touch-none hover:bg-secondary/60",
             resizing || cardHeight !== undefined
               ? "opacity-100"
               : "opacity-0 transition-opacity group-hover:opacity-100",

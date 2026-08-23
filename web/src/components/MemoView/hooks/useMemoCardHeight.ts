@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 // Per-memo user-resized card heights, persisted in localStorage so a resized
 // memo keeps its custom size across sessions. Keyed by memo name so each card
@@ -55,7 +55,11 @@ export interface UseMemoCardHeightReturn {
   /** True while the user is dragging the resize handle. */
   resizing: boolean;
   /** Attach to the bottom-right resize handle's pointerdown. */
-  handleResizePointerDown: (event: React.PointerEvent) => void;
+  handleResizePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  /** Attach to the handle's pointermove; drags are captured so moves keep flowing. */
+  handleResizePointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  /** Attach to the handle's pointerup/pointercancel; persists the final height. */
+  handleResizePointerUp: () => void;
   /** Drop the custom height and fall back to the automatic layout. */
   resetCardHeight: () => void;
 }
@@ -64,52 +68,53 @@ export const useMemoCardHeight = (memoName: string): UseMemoCardHeightReturn => 
   const [cardHeight, setCardHeight] = useState<number | undefined>(() => getMemoCardHeight(memoName));
   const [resizing, setResizing] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const dragStartRef = useRef<{ startY: number; startHeight: number } | null>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; startHeight: number } | null>(null);
   const liveHeightRef = useRef<number | undefined>(cardHeight);
   liveHeightRef.current = cardHeight;
 
-  const handleResizePointerDown = useCallback((event: React.PointerEvent) => {
+  const handleResizePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
     const card = cardRef.current;
     if (!card) return;
     event.preventDefault();
     event.stopPropagation();
-    dragStartRef.current = { startY: event.clientY, startHeight: card.getBoundingClientRect().height };
+    // Capture the pointer so every move/up lands on this handle even when the
+    // cursor leaves the tiny button mid-drag.
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic events cannot capture; the on-move/on-up handlers still fire.
+    }
+    dragStartRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startHeight: card.getBoundingClientRect().height,
+    };
     setResizing(true);
   }, []);
 
-  useEffect(() => {
-    if (!resizing) return;
+  // Both axes feed the height so a diagonal corner drag feels free-form:
+  // dragging down-right grows the card, dragging up-left shrinks it.
+  const handleResizePointerMove = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return;
+    const deltaY = event.clientY - start.startY;
+    const deltaX = event.clientX - start.startX;
+    setCardHeight(Math.max(MIN_RESIZABLE_CARD_HEIGHT, Math.round(start.startHeight + deltaY + deltaX)));
+  }, []);
 
-    const handlePointerMove = (event: PointerEvent) => {
-      const start = dragStartRef.current;
-      if (!start) return;
-      const next = Math.max(MIN_RESIZABLE_CARD_HEIGHT, Math.round(start.startHeight + (event.clientY - start.startY)));
-      setCardHeight(next);
-    };
-
-    const handlePointerUp = () => {
-      const finalHeight = liveHeightRef.current;
-      if (finalHeight !== undefined) {
-        setMemoCardHeight(memoName, finalHeight);
-      }
-      dragStartRef.current = null;
-      setResizing(false);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    };
-  }, [resizing, memoName]);
+  const handleResizePointerUp = useCallback(() => {
+    const finalHeight = liveHeightRef.current;
+    if (finalHeight !== undefined) {
+      setMemoCardHeight(memoName, finalHeight);
+    }
+    dragStartRef.current = null;
+    setResizing(false);
+  }, [memoName]);
 
   const resetCardHeight = useCallback(() => {
     setCardHeight(undefined);
     clearMemoCardHeight(memoName);
   }, [memoName]);
 
-  return { cardRef, cardHeight, resizing, handleResizePointerDown, resetCardHeight };
+  return { cardRef, cardHeight, resizing, handleResizePointerDown, handleResizePointerMove, handleResizePointerUp, resetCardHeight };
 };
