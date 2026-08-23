@@ -140,7 +140,9 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
       <MemoHeader showCreator={showCreator} showVisibility={showVisibility} showPinned={showPinned} />
 
       <MemoBody compact={compact && !appliedCardHeight} />
-      {resizable && (resizing || cardHeight !== undefined) && (
+      {/* The handle renders on every feed card; it is only visible on hover until
+          the card has a custom size, after which it stays visible. */}
+      {resizable && (
         <button
           type="button"
           aria-label="Resize memo card"
@@ -149,8 +151,10 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
           onDoubleClick={resetCardHeight}
           className={cn(
             "absolute bottom-0.5 right-1 z-10 flex h-5 w-5 items-center justify-center gap-0.5 rounded-sm",
-            "cursor-ns-resize touch-none",
-            resizing ? "opacity-100" : "opacity-0 transition-opacity group-hover:opacity-100",
+            "cursor-ns-resize touch-none hover:bg-secondary/60",
+            resizing || cardHeight !== undefined
+              ? "opacity-100"
+              : "opacity-0 transition-opacity group-hover:opacity-100",
           )}
         >
           <span className="h-3.5 w-0.5 rounded-full bg-foreground/40" />
