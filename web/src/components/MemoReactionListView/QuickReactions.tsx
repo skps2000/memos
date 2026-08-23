@@ -8,7 +8,7 @@ interface Props {
   className?: string;
 }
 
-const QUICK_REACTION_COUNT = 5;
+const QUICK_REACTION_COUNT = 2;
 
 // QuickReactions renders the first few configured reactions as one-tap
 // buttons so users can react without opening the full reaction picker.

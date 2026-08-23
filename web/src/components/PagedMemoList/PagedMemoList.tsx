@@ -26,7 +26,7 @@ export const getMemoKey = (memo: Memo) => memo.name;
 
 // Columns never stretch past this, so 2 columns on a wide monitor stay readable and the
 // grid centers in the leftover space instead of filling it.
-const MAX_COLUMN_WIDTH = 420;
+const MAX_COLUMN_WIDTH = 840;
 
 const Loader = () => (
   <div className="w-full flex flex-row justify-center items-center py-8">
@@ -251,7 +251,7 @@ const PagedMemoList = (props: Props) => {
   const children = (
     <MentionResolutionProvider contents={contents} userNames={userNames}>
       <div ref={layoutMeasureRef} className="w-full">
-        <div className={cn("flex flex-col justify-start w-full mx-auto", useGrid ? "max-w-none" : "max-w-2xl")}>
+        <div className={cn("flex flex-col justify-start w-full mx-auto", useGrid ? "max-w-none" : "max-w-[84rem]")}>
           {useGrid ? (
             <>
               <ColumnGrid
