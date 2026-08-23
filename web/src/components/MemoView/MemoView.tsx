@@ -1,4 +1,4 @@
-import { type ComponentType, memo, Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ComponentType, memo, Suspense, useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useResolvedUser } from "@/components/MemoContent/MentionResolutionContext";
 import { loadMemoEditor } from "@/components/MemoEditor/loader";
@@ -12,7 +12,7 @@ import { lazyWithReload } from "@/utils/lazy";
 import { isSuperUser } from "@/utils/user";
 import { MemoBody, MemoCommentListView, MemoHeader } from "./components";
 import { MEMO_CARD_BASE_CLASSES } from "./constants";
-import { useImagePreview } from "./hooks";
+import { useImagePreview, useMemoCardHeight } from "./hooks";
 import { computeCommentAmount, MemoViewContext } from "./MemoViewContext";
 import type { MemoViewProps } from "./types";
 
@@ -21,7 +21,6 @@ const PreviewImageDialog = lazyWithReload(() => import("../PreviewImageDialog"))
 
 const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
   const { memo: memoData, className, parentPage: parentPageProp, compact, showCreator, showVisibility, showPinned } = props;
-  const cardRef = useRef<HTMLDivElement>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [EditorComponent, setEditorComponent] = useState<ComponentType<MemoEditorProps>>();
   const [cardWidth, setCardWidth] = useState(0);
@@ -32,6 +31,10 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
   const isArchived = memoData.state === State.ARCHIVED;
   const readonly = memoData.creator !== currentUser?.name && !isSuperUser(currentUser);
   const parentPage = parentPageProp || "/";
+
+  // Per-memo user-resized height: drag the bottom-right handle to size a card,
+  // the result is persisted per memo and reapplied every time that memo shows.
+  const { cardRef, cardHeight, resizing, handleResizePointerDown, resetCardHeight } = useMemoCardHeight(memoData.name);
 
   // Blur content when any tag has blur_content enabled in the current user's tag settings.
   const [showBlurredContent, setShowBlurredContent] = useState(false);
@@ -54,6 +57,9 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
   const isInMemoDetailPage = location.pathname.startsWith(`/${memoData.name}`) || location.pathname.startsWith("/memos/shares/");
   const showCommentPreview = !isInMemoDetailPage && computeCommentAmount(memoData) > 0;
 
+  // The detail page shows a single memo at full size; resizing belongs to the feeds.
+  const resizable = !isInMemoDetailPage;
+  const appliedCardHeight = resizable ? cardHeight : undefined;
   // The card width is only needed by the share-image dialog. Keep feed cards
   // free of a permanent ResizeObserver and measure only while that dialog is open.
   useLayoutEffect(() => {
@@ -120,13 +126,37 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
 
   const article = (
     <article
-      className={cn(MEMO_CARD_BASE_CLASSES, showCommentPreview ? "mb-0 rounded-b-none" : "mb-2", className)}
+      className={cn(
+        MEMO_CARD_BASE_CLASSES,
+        showCommentPreview ? "mb-0 rounded-b-none" : "mb-2",
+        appliedCardHeight && "overflow-hidden",
+        resizing && "select-none",
+        className,
+      )}
       ref={cardRef}
       tabIndex={readonly ? -1 : 0}
+      style={appliedCardHeight ? { maxHeight: appliedCardHeight } : undefined}
     >
       <MemoHeader showCreator={showCreator} showVisibility={showVisibility} showPinned={showPinned} />
 
-      <MemoBody compact={compact} />
+      <MemoBody compact={compact && !appliedCardHeight} />
+      {resizable && (resizing || cardHeight !== undefined) && (
+        <button
+          type="button"
+          aria-label="Resize memo card"
+          title="Drag to resize / double-click to reset"
+          onPointerDown={handleResizePointerDown}
+          onDoubleClick={resetCardHeight}
+          className={cn(
+            "absolute bottom-0.5 right-1 z-10 flex h-5 w-5 items-center justify-center gap-0.5 rounded-sm",
+            "cursor-ns-resize touch-none",
+            resizing ? "opacity-100" : "opacity-0 transition-opacity group-hover:opacity-100",
+          )}
+        >
+          <span className="h-3.5 w-0.5 rounded-full bg-foreground/40" />
+          <span className="h-3.5 w-0.5 rounded-full bg-foreground/40" />
+        </button>
+      )}
 
       {previewState.items.length > 0 && (
         <Suspense fallback={null}>

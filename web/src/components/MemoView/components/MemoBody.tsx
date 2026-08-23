@@ -45,9 +45,11 @@ const MemoBody: React.FC<MemoBodyProps> = ({ compact }) => {
 
   return (
     <>
+      {/* min-h-0 flex-1 overflow-y-auto lets a user-resized card scroll its
+          content inside the article's max-height instead of clipping it. */}
       <div
         className={cn(
-          "w-full flex flex-col justify-start items-start gap-2",
+          "w-full min-h-0 flex-1 overflow-y-auto flex flex-col justify-start items-start gap-2",
           blurred && !showBlurredContent && "blur-lg transition-all duration-200",
         )}
       >

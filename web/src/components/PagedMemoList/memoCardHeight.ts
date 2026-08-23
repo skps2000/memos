@@ -1,4 +1,5 @@
 import { CLAMP_PREVIEW_HEIGHT_PX, CLAMP_TRIGGER_HEIGHT_PX } from "@/components/ClampedSection";
+import { getMemoCardHeight } from "@/components/MemoView/hooks/useMemoCardHeight";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 import { MemoRelation_Type } from "@/types/proto/api/v1/memo_service_pb";
@@ -98,6 +99,10 @@ const estimateCommentPreviewHeight = (memo: Memo): number => {
 };
 
 export const estimateMemoCardHeight = (memo: Memo, { columnWidth }: EstimateMemoCardHeightOptions): number => {
+  // A user-resized card reports its fixed height so the grid knows its exact size.
+  const savedHeight = getMemoCardHeight(memo.name);
+  if (savedHeight !== undefined) return savedHeight;
+
   const content = memo.content ?? "";
   const contentHeight = estimateWrappedTextHeight(content, columnWidth) + countMarkdownImages(content) * MARKDOWN_IMAGE_HEIGHT;
   const attachmentHeight = estimateAttachmentSectionHeight(filterInlineManagedAttachments(content, memo.attachments ?? []), columnWidth);
