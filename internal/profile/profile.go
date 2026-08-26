@@ -26,8 +26,10 @@ type Profile struct {
 	// DSN points to where memos stores its own data
 	DSN string
 	// Driver is the database driver
-	// sqlite, mysql
+	// sqlite, libsql, mysql, postgres
 	Driver string
+	// LibSQLAuthToken is the auth token for remote libSQL (Turso) databases.
+	LibSQLAuthToken string
 	// Version is the current version of server
 	Version string
 	// Commit is the current build commit of server

@@ -252,11 +252,20 @@ func (s *Store) preMigrate(ctx context.Context) error {
 }
 
 func (s *Store) getMigrationBasePath() string {
-	return fmt.Sprintf("migration/%s/", s.profile.Driver)
+	driver := s.profile.Driver
+	if driver == "libsql" {
+		// libSQL (Turso) is SQLite-compatible, so reuse the SQLite migration scripts.
+		driver = "sqlite"
+	}
+	return fmt.Sprintf("migration/%s/", driver)
 }
 
 func (s *Store) getSeedBasePath() string {
-	return fmt.Sprintf("seed/%s/", s.profile.Driver)
+	driver := s.profile.Driver
+	if driver == "libsql" {
+		driver = "sqlite"
+	}
+	return fmt.Sprintf("seed/%s/", driver)
 }
 
 // seed seeds the database with initial data.

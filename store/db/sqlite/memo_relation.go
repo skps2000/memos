@@ -86,7 +86,7 @@ func (d *DB) ListMemoRelations(ctx context.Context, find *store.FindMemoRelation
 		if err != nil {
 			return nil, err
 		}
-		stmt, err := engine.CompileToStatement(ctx, *find.MemoFilter, filter.RenderOptions{Dialect: filter.DialectSQLite})
+		stmt, err := engine.CompileToStatement(ctx, *find.MemoFilter, filter.RenderOptions{Dialect: d.filterDialect})
 		if err != nil {
 			return nil, err
 		}

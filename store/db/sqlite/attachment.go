@@ -78,7 +78,7 @@ func (d *DB) ListAttachments(ctx context.Context, find *store.FindAttachment) ([
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get filter engine")
 		}
-		if err := filter.AppendConditions(ctx, engine, find.Filters, filter.DialectSQLite, &where, &args); err != nil {
+		if err := filter.AppendConditions(ctx, engine, find.Filters, d.filterDialect, &where, &args); err != nil {
 			return nil, errors.Wrap(err, "failed to append filter conditions")
 		}
 	}

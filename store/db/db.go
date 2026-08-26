@@ -5,6 +5,7 @@ import (
 
 	"github.com/usememos/memos/internal/profile"
 	"github.com/usememos/memos/store"
+	"github.com/usememos/memos/store/db/libsql"
 	"github.com/usememos/memos/store/db/mysql"
 	"github.com/usememos/memos/store/db/postgres"
 	"github.com/usememos/memos/store/db/sqlite"
@@ -18,6 +19,8 @@ func NewDBDriver(profile *profile.Profile) (store.Driver, error) {
 	switch profile.Driver {
 	case "sqlite":
 		driver, err = sqlite.NewDB(profile)
+	case "libsql":
+		driver, err = libsql.NewDB(profile)
 	case "mysql":
 		driver, err = mysql.NewDB(profile)
 	case "postgres":

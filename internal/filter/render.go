@@ -236,7 +236,7 @@ func (r *renderer) timestampAccessorExpr(field Field, accessor string) (string, 
 	var base string
 	var off int
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		base = fmt.Sprintf("CAST(strftime('%s', %s, 'unixepoch') AS INTEGER)", spec.sqlite, col)
 		off = spec.off[0]
 	case DialectPostgres:
@@ -370,7 +370,7 @@ func (r *renderer) renderJSONBoolComparison(field Field, op ComparisonOperator, 
 
 	jsonExpr := jsonExtractExpr(r.dialect, field)
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		switch op {
 		case CompareEq:
 			if field.Name == "has_task_list" {
@@ -551,8 +551,9 @@ func (r *renderer) renderRegex(cond *RegexCondition) (renderResult, error) {
 	case DialectPostgres:
 		// POSIX regex match operator.
 		return renderResult{sql: fmt.Sprintf("%s ~ %s", column, r.addArg(cond.Pattern))}, nil
-	case DialectMySQL, DialectSQLite:
-		// MySQL has a native REGEXP operator; SQLite uses the registered regexp() function.
+	case DialectMySQL, DialectSQLite, DialectLibSQL:
+		// MySQL has a native REGEXP operator; SQLite and libSQL (Turso) also
+		// support the REGEXP operator.
 		return renderResult{sql: fmt.Sprintf("%s REGEXP %s", column, r.addArg(cond.Pattern))}, nil
 	default:
 		return renderResult{}, errors.Errorf("unsupported dialect %s", r.dialect)
@@ -567,6 +568,10 @@ func (r *renderer) foldedLike(colExpr, pattern string) string {
 		// memos_unicode_lower gives Unicode-aware folding; ESCAPE '\' is required
 		// because SQLite has no default LIKE escape character.
 		return fmt.Sprintf(`memos_unicode_lower(%s) LIKE memos_unicode_lower(%s) ESCAPE '\'`, colExpr, r.addArg(pattern))
+	case DialectLibSQL:
+		// libSQL (Turso) has no custom functions, so fall back to the built-in
+		// LOWER (ASCII-only folding); ESCAPE '\' is required like SQLite.
+		return fmt.Sprintf(`LOWER(%s) LIKE LOWER(%s) ESCAPE '\'`, colExpr, r.addArg(pattern))
 	case DialectPostgres:
 		// ILIKE is case-insensitive; backslash is the default escape character.
 		return fmt.Sprintf("%s ILIKE %s", colExpr, r.addArg(pattern))
@@ -619,7 +624,7 @@ func (r *renderer) renderTagComprehension(field Field, pred PredicateExpr, kind 
 
 	var elements, length string
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		arrayExpr = fmt.Sprintf("COALESCE(%s, JSON_ARRAY())", arrayExpr)
 		elements = fmt.Sprintf("json_each(%s) AS tag_item", arrayExpr)
 		length = fmt.Sprintf("json_array_length(%s)", arrayExpr)
@@ -672,7 +677,7 @@ func (r *renderer) tagElementPredicateSQL(element string, pred PredicateExpr) (s
 	case *EqualsPredicate:
 		placeholder := r.addArg(p.Value)
 		switch r.dialect {
-		case DialectSQLite:
+		case DialectSQLite, DialectLibSQL:
 			return fmt.Sprintf("(%s COLLATE BINARY) = (%s COLLATE BINARY)", element, placeholder), nil
 		case DialectMySQL:
 			return fmt.Sprintf("CAST(%s AS BINARY) = CAST(%s AS BINARY)", element, placeholder), nil
@@ -697,7 +702,7 @@ func (r *renderer) tagElementTextMatch(element string, mode TextMatchMode, value
 	}
 
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		switch mode {
 		case TextMatchPrefix:
 			return fmt.Sprintf("instr(%s, %s) = 1", element, r.addArg(value)), nil
@@ -739,7 +744,7 @@ func tagLikePattern(mode TextMatchMode, value string) string {
 func (r *renderer) jsonExistsSQL(field Field) (string, error) {
 	expr := jsonExtractExpr(r.dialect, field)
 	switch r.dialect {
-	case DialectSQLite, DialectPostgres:
+	case DialectSQLite, DialectLibSQL, DialectPostgres:
 		// SQLite's JSON_EXTRACT and Postgres' terminal ->> fold both a missing
 		// key and a JSON null to SQL NULL.
 		return fmt.Sprintf("%s IS NOT NULL", expr), nil
@@ -779,7 +784,7 @@ func (r *renderer) renderJSONExistsComparison(field Field, op ComparisonOperator
 func (r *renderer) jsonBoolPredicate(field Field) (string, error) {
 	expr := jsonExtractExpr(r.dialect, field)
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		return fmt.Sprintf("%s IS TRUE", expr), nil
 	case DialectMySQL:
 		return fmt.Sprintf("COALESCE(%s, CAST('false' AS JSON)) = CAST('true' AS JSON)", expr), nil
@@ -832,7 +837,7 @@ func (r *renderer) addArg(value any) string {
 func (r *renderer) addBoolArg(value bool) string {
 	var v any
 	switch r.dialect {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		if value {
 			v = 1
 		} else {
@@ -913,7 +918,7 @@ func jsonPath(field Field) string {
 func jsonExtractExpr(d DialectName, field Field) string {
 	column := qualifyColumn(d, field.Column)
 	switch d {
-	case DialectSQLite, DialectMySQL:
+	case DialectSQLite, DialectLibSQL, DialectMySQL:
 		return fmt.Sprintf("JSON_EXTRACT(%s, '%s')", column, jsonPath(field))
 	case DialectPostgres:
 		return buildPostgresJSONAccessor(column, field.JSONPath, true)
@@ -925,7 +930,7 @@ func jsonExtractExpr(d DialectName, field Field) string {
 func jsonArrayExpr(d DialectName, field Field) string {
 	column := qualifyColumn(d, field.Column)
 	switch d {
-	case DialectSQLite, DialectMySQL:
+	case DialectSQLite, DialectLibSQL, DialectMySQL:
 		return fmt.Sprintf("JSON_EXTRACT(%s, '%s')", column, jsonPath(field))
 	case DialectPostgres:
 		return buildPostgresJSONAccessor(column, field.JSONPath, false)
@@ -937,7 +942,7 @@ func jsonArrayExpr(d DialectName, field Field) string {
 func jsonArrayLengthExpr(d DialectName, field Field) string {
 	arrayExpr := jsonArrayExpr(d, field)
 	switch d {
-	case DialectSQLite:
+	case DialectSQLite, DialectLibSQL:
 		return fmt.Sprintf("JSON_ARRAY_LENGTH(COALESCE(%s, JSON_ARRAY()))", arrayExpr)
 	case DialectMySQL:
 		return fmt.Sprintf("JSON_LENGTH(COALESCE(%s, JSON_ARRAY()))", arrayExpr)

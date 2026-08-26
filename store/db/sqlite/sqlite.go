@@ -9,13 +9,15 @@ import (
 	// Note: modernc.org/sqlite driver is imported in functions.go where
 	// RegisterScalarFunction is used. No blank import needed here.
 
+	"github.com/usememos/memos/internal/filter"
 	"github.com/usememos/memos/internal/profile"
 	"github.com/usememos/memos/store"
 )
 
 type DB struct {
-	db      *sql.DB
-	profile *profile.Profile
+	db            *sql.DB
+	profile       *profile.Profile
+	filterDialect filter.DialectName
 }
 
 // NewDB opens a database specified by its database driver name and a
@@ -55,9 +57,23 @@ func NewDB(profile *profile.Profile) (store.Driver, error) {
 		return nil, errors.Wrapf(err, "failed to open db with dsn: %s", profile.DSN)
 	}
 
-	driver := DB{db: sqliteDB, profile: profile}
+	return NewDBWithConn(profile, sqliteDB), nil
+}
 
-	return &driver, nil
+// NewDBWithConn wraps an existing *sql.DB connection in the SQLite driver
+// implementation. It skips DSN validation and custom function registration,
+// which is useful for remote libSQL (Turso) connections that already provide
+// their own connection and cannot register custom scalar functions.
+func NewDBWithConn(profile *profile.Profile, sqliteDB *sql.DB) store.Driver {
+	// When the sqlite implementation is reused by the libSQL driver, the
+	// filter layer must know that custom functions (memos_unicode_lower) are
+	// unavailable and use built-in fallbacks instead.
+	driver := DB{db: sqliteDB, profile: profile, filterDialect: filter.DialectSQLite}
+	if profile.Driver == "libsql" {
+		driver.filterDialect = filter.DialectLibSQL
+	}
+
+	return &driver
 }
 
 func (d *DB) GetDB() *sql.DB {

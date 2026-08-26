@@ -58,7 +58,7 @@ func (d *DB) ListMemos(ctx context.Context, find *store.FindMemo) ([]*store.Memo
 	if err != nil {
 		return nil, err
 	}
-	if err := filter.AppendConditions(ctx, engine, find.Filters, filter.DialectSQLite, &where, &args); err != nil {
+	if err := filter.AppendConditions(ctx, engine, find.Filters, d.filterDialect, &where, &args); err != nil {
 		return nil, err
 	}
 	if v := find.ID; v != nil {
@@ -138,7 +138,7 @@ func (d *DB) ListMemos(ctx context.Context, find *store.FindMemo) ([]*store.Memo
 
 	query := "SELECT " + strings.Join(fields, ", ") + "FROM `memo` " +
 		"LEFT JOIN `user` AS `memo_creator` ON `memo`.`creator_id` = `memo_creator`.`id` " +
-		"LEFT JOIN `memo_relation` ON `memo`.`id` = `memo_relation`.`memo_id` AND `memo_relation`.`type` = \"COMMENT\" " +
+		"LEFT JOIN `memo_relation` ON `memo`.`id` = `memo_relation`.`memo_id` AND `memo_relation`.`type` = 'COMMENT' " +
 		"LEFT JOIN `memo` AS `parent_memo` ON `memo_relation`.`related_memo_id` = `parent_memo`.`id` " +
 		"WHERE " + strings.Join(where, " AND ") + " " +
 		"ORDER BY " + strings.Join(orderBy, ", ")

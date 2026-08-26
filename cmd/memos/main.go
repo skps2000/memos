@@ -40,9 +40,10 @@ var (
 				Port:        viper.GetInt("port"),
 				UNIXSock:    viper.GetString("unix-sock"),
 				Data:        viper.GetString("data"),
-				Driver:      viper.GetString("driver"),
-				DSN:         viper.GetString("dsn"),
-				InstanceURL: viper.GetString("instance-url"),
+				Driver:          viper.GetString("driver"),
+				DSN:             viper.GetString("dsn"),
+				LibSQLAuthToken: viper.GetString("libsql-auth-token"),
+				InstanceURL:     viper.GetString("instance-url"),
 			}
 			instanceProfile.Version = version.GetCurrentVersion()
 			instanceProfile.Commit = version.Commit
@@ -129,6 +130,7 @@ func init() {
 	rootCmd.PersistentFlags().String("data", "", "data directory")
 	rootCmd.PersistentFlags().String("driver", "sqlite", "database driver")
 	rootCmd.PersistentFlags().String("dsn", "", "database source name(aka. DSN)")
+	rootCmd.PersistentFlags().String("libsql-auth-token", "", "auth token for remote libsql (Turso) database")
 	rootCmd.PersistentFlags().String("instance-url", "", "the url of your memos instance")
 	rootCmd.PersistentFlags().Bool("allow-private-webhooks", false, "allow webhook URLs to resolve to private/reserved IP addresses")
 	rootCmd.PersistentFlags().String("log-level", "info", "log verbosity level (debug, info, warn, error)")
@@ -152,6 +154,9 @@ func init() {
 		panic(err)
 	}
 	if err := viper.BindPFlag("dsn", rootCmd.PersistentFlags().Lookup("dsn")); err != nil {
+		panic(err)
+	}
+	if err := viper.BindPFlag("libsql-auth-token", rootCmd.PersistentFlags().Lookup("libsql-auth-token")); err != nil {
 		panic(err)
 	}
 	if err := viper.BindPFlag("instance-url", rootCmd.PersistentFlags().Lookup("instance-url")); err != nil {

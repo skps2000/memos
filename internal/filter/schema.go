@@ -12,6 +12,7 @@ type DialectName string
 
 const (
 	DialectSQLite   DialectName = "sqlite"
+	DialectLibSQL   DialectName = "libsql"
 	DialectMySQL    DialectName = "mysql"
 	DialectPostgres DialectName = "postgres"
 )
@@ -336,6 +337,13 @@ func (f Field) columnExpr(d DialectName) string {
 	base := qualifyColumn(d, f.Column)
 	if expr, ok := f.Expressions[d]; ok && expr != "" {
 		return fmt.Sprintf(expr, base)
+	}
+	// libSQL (Turso) is SQLite-compatible, so reuse the SQLite expressions when
+	// no libsql-specific override is configured.
+	if d == DialectLibSQL {
+		if expr, ok := f.Expressions[DialectSQLite]; ok && expr != "" {
+			return fmt.Sprintf(expr, base)
+		}
 	}
 	return base
 }

@@ -244,6 +244,8 @@ func (s *APIV1Service) filterDialect() filter.DialectName {
 		return filter.DialectMySQL
 	case "postgres":
 		return filter.DialectPostgres
+	case "libsql":
+		return filter.DialectLibSQL
 	default:
 		return filter.DialectSQLite
 	}
