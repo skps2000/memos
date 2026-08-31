@@ -379,6 +379,8 @@
     "order": "Order",
     "order-by": "Order By",
     "outline": "Outline",
+    "resize-card": "Resize memo card",
+    "resize-card-hint": "Drag to resize, arrow keys to nudge, double-click to reset",
     "search-placeholder": "Search memos...",
     "shown-time": "Shown time",
     "share": {

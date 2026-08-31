@@ -1,6 +1,17 @@
 import { ArrowUpIcon, LoaderCircleIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { MentionResolutionProvider } from "@/components/MemoContent/MentionResolutionContext";
+import { getCardSizeVersion, getMemoCardSpan, subscribeToCardSizes } from "@/components/MemoView/memoCardSize";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemoFilterContext } from "@/contexts/MemoFilterContext";
@@ -192,6 +203,15 @@ const PagedMemoList = (props: Props) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isDisplayPending, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Column spans live outside React (localStorage, written by whichever card was dragged), so
+  // subscribe to the store and hand the grid a fresh reader whenever a span changes. Without
+  // this the wall would keep the old packing until something else happened to re-render it.
+  const cardSizeVersion = useSyncExternalStore(subscribeToCardSizes, getCardSizeVersion, getCardSizeVersion);
+  const getSpan = useMemo(() => {
+    void cardSizeVersion;
+    return (memo: Memo) => getMemoCardSpan(memo.name);
+  }, [cardSizeVersion]);
+
   const leadingContent = props.renderLeading?.({ useGrid });
 
   // A freshly created memo is hoisted to the front; pin it to the top of column one so it
@@ -259,6 +279,7 @@ const PagedMemoList = (props: Props) => {
                 getKey={getMemoKey}
                 renderItem={(memo) => props.renderer(memo, { compact: effectiveCompact })}
                 estimateHeight={estimateMemoCardHeight}
+                getSpan={getSpan}
                 leading={gridLeading}
                 priorityKey={priorityKey}
                 maxColumns={maxColumns}

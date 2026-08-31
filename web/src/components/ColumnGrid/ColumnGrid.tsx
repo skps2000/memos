@@ -8,6 +8,8 @@ interface ColumnGridProps<T> {
   renderItem: (item: T) => ReactNode;
   /** Estimated rendered height in px, used only to choose a column deterministically. */
   estimateHeight?: (item: T, context: { columnWidth: number }) => number;
+  /** How many adjacent columns an item covers; defaults to one. Clamped to the column count. */
+  getSpan?: (item: T) => number;
   /** Optional node packed as the very first tile (e.g. the note composer). */
   leading?: ReactNode;
   /** Key that must land at the top of column one (e.g. a just-created memo), not the shortest column. */
@@ -28,37 +30,71 @@ export const GRID_GAP = 12;
 export const columnCountForWidth = (width: number): number =>
   Math.max(1, Math.floor((width + GRID_GAP) / (GRID_MIN_COLUMN_WIDTH + GRID_GAP)));
 
-const shortestColumn = (heights: number[]): number => {
+/**
+ * The leftmost start column at which `span` adjacent columns can take an item soonest.
+ * A one-column item reduces to "the shortest column"; a wider one has to clear every column
+ * it covers, so it is placed where that worst column is lowest. Ties go left, keeping the
+ * packing deterministic for the same inputs.
+ */
+const bestStartColumn = (totals: number[], span: number): number => {
+  const lastStart = Math.max(0, totals.length - span);
   let index = 0;
-  for (let i = 1; i < heights.length; i++) {
-    if (heights[i] < heights[index]) {
-      index = i;
+  let best = Number.POSITIVE_INFINITY;
+  for (let start = 0; start <= lastStart; start++) {
+    let blocked = 0;
+    for (let offset = 0; offset < span && start + offset < totals.length; offset++) {
+      blocked = Math.max(blocked, totals[start + offset]);
+    }
+    if (blocked < best) {
+      best = blocked;
+      index = start;
     }
   }
   return index;
 };
 
+export interface GridPlacement {
+  /** Start column; the item covers `span` columns from here. */
+  column: number;
+  span: number;
+}
+
 export const assignColumnsByEstimatedHeight = ({
   keys,
   columnCount,
   getEstimatedHeight,
+  getSpan,
   pinnedKeys,
 }: {
   keys: string[];
   columnCount: number;
   getEstimatedHeight: (key: string) => number;
+  getSpan?: (key: string) => number;
   pinnedKeys?: ReadonlySet<string>;
-}): Map<string, number> => {
+}): Map<string, GridPlacement> => {
   const totals = new Array<number>(columnCount).fill(0);
-  const columns = new Map<string, number>();
+  const placements = new Map<string, GridPlacement>();
 
   for (const key of keys) {
-    const column = pinnedKeys?.has(key) ? 0 : shortestColumn(totals);
-    columns.set(key, column);
-    totals[column] += Math.max(0, getEstimatedHeight(key));
+    // A card can be stored wider than the wall currently is — the window may have narrowed
+    // since it was resized — so every span is clamped to what actually fits.
+    const span = Math.min(Math.max(1, Math.round(getSpan?.(key) ?? 1)), columnCount);
+    const column = pinnedKeys?.has(key) ? 0 : bestStartColumn(totals, span);
+    placements.set(key, { column, span });
+
+    // Every covered column advances to the same baseline, so nothing packs into the notch
+    // beside a wide card and overlaps it.
+    let baseline = 0;
+    for (let offset = 0; offset < span && column + offset < columnCount; offset++) {
+      baseline = Math.max(baseline, totals[column + offset]);
+    }
+    const next = baseline + Math.max(0, getEstimatedHeight(key));
+    for (let offset = 0; offset < span && column + offset < columnCount; offset++) {
+      totals[column + offset] = next;
+    }
   }
 
-  return columns;
+  return placements;
 };
 
 /**
@@ -75,6 +111,7 @@ function ColumnGrid<T>({
   getKey,
   renderItem,
   estimateHeight,
+  getSpan,
   leading,
   priorityKey,
   maxColumns,
@@ -119,11 +156,24 @@ function ColumnGrid<T>({
       if (el) ordered.push({ key, el });
     }
 
+    // A card resized sideways covers several columns; the leading tile always stays one wide.
+    const spanOf = (key: string): number => {
+      if (key === LEADING_KEY) return 1;
+      const item = itemByKey.get(key);
+      return item && getSpan ? Math.min(Math.max(1, Math.round(getSpan(item))), count) : 1;
+    };
+    const widthForSpan = (span: number) => span * columnWidth + (span - 1) * GRID_GAP;
+
     // Pass 1 (writes): fix each card's width and drop its own bottom margin so spacing is
     // owned entirely by `gap`. `firstElementChild` is the item's rendered root. Items are
-    // expected to bound their own height — the grid never clips content itself.
-    for (const { el } of ordered) {
-      el.style.width = `${columnWidth}px`;
+    // expected to bound their own height — the grid never clips content itself. The column
+    // metrics ride along on the wrapper so a card's own resize handle can snap to them
+    // without the grid having to reach down into it.
+    for (const { key, el } of ordered) {
+      el.style.width = `${widthForSpan(spanOf(key))}px`;
+      el.dataset.gridColumnWidth = `${columnWidth}`;
+      el.dataset.gridGap = `${GRID_GAP}`;
+      el.dataset.gridColumns = `${count}`;
       const child = el.firstElementChild;
       if (child instanceof HTMLElement) {
         child.style.marginBottom = "0px";
@@ -144,25 +194,35 @@ function ColumnGrid<T>({
     if (priorityKey) {
       pinnedKeys.add(priorityKey);
     }
-    const columnOf = assignColumnsByEstimatedHeight({
+    const placementOf = assignColumnsByEstimatedHeight({
       keys: ordered.map((entry) => entry.key),
       columnCount: count,
       pinnedKeys,
+      getSpan: spanOf,
       getEstimatedHeight: (key) => {
         const item = itemByKey.get(key);
-        return item && estimateHeight ? estimateHeight(item, { columnWidth }) : heightOf(key);
+        return item && estimateHeight ? estimateHeight(item, { columnWidth: widthForSpan(spanOf(key)) }) : heightOf(key);
       },
     });
 
     const columnY = new Array<number>(count).fill(0);
     const pos = new Map<string, { x: number; y: number }>();
     for (const { key } of ordered) {
-      const col = columnOf.get(key) ?? 0;
+      const { column: col, span } = placementOf.get(key) ?? { column: 0, span: 1 };
+      const spannedWidth = widthForSpan(span);
       const inlineOffset = offsetX + col * (columnWidth + GRID_GAP);
-      const x = direction === "rtl" ? width - columnWidth - inlineOffset : inlineOffset;
-      const y = columnY[col];
+      const x = direction === "rtl" ? width - spannedWidth - inlineOffset : inlineOffset;
+      // A card starts below every column it covers, and drops all of them to its own bottom,
+      // so the columns beside a wide card stay in step with it.
+      let y = 0;
+      for (let offset = 0; offset < span && col + offset < count; offset++) {
+        y = Math.max(y, columnY[col + offset]);
+      }
       pos.set(key, { x, y });
-      columnY[col] = y + heightOf(key) + GRID_GAP;
+      const bottom = y + heightOf(key) + GRID_GAP;
+      for (let offset = 0; offset < span && col + offset < count; offset++) {
+        columnY[col + offset] = bottom;
+      }
     }
 
     // Apply the chosen positions without transitions. Relayouts may be caused by late media or
@@ -188,7 +248,7 @@ function ColumnGrid<T>({
     }
 
     setContainerHeight(Math.max(0, ...columnY.map((h) => h - GRID_GAP)));
-  }, [items, getKey, estimateHeight, priorityKey, maxColumns, maxColumnWidth, direction]);
+  }, [items, getKey, estimateHeight, getSpan, priorityKey, maxColumns, maxColumnWidth, direction]);
 
   // Keep a stable reference so observer callbacks always run the latest layout.
   const relayoutRef = useRef(relayout);

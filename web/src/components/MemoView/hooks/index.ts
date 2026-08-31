@@ -1,4 +1,4 @@
 export { useImagePreview } from "./useImagePreview";
 export { useMemoActions } from "./useMemoActions";
-export { useMemoCardHeight } from "./useMemoCardHeight";
+export { useMemoCardSize } from "./useMemoCardSize";
 export { useMemoHandlers } from "./useMemoHandlers";

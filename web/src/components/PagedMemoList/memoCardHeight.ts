@@ -1,5 +1,5 @@
 import { CLAMP_PREVIEW_HEIGHT_PX, CLAMP_TRIGGER_HEIGHT_PX } from "@/components/ClampedSection";
-import { getMemoCardHeight } from "@/components/MemoView/hooks/useMemoCardHeight";
+import { getMemoCardHeight } from "@/components/MemoView/memoCardSize";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
 import { MemoRelation_Type } from "@/types/proto/api/v1/memo_service_pb";

@@ -8,11 +8,12 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { findTagMetadata } from "@/lib/tag";
 import { cn } from "@/lib/utils";
 import { State } from "@/types/proto/api/v1/common_pb";
+import { useTranslate } from "@/utils/i18n";
 import { lazyWithReload } from "@/utils/lazy";
 import { isSuperUser } from "@/utils/user";
 import { MemoBody, MemoCommentListView, MemoHeader } from "./components";
 import { MEMO_CARD_BASE_CLASSES } from "./constants";
-import { useImagePreview, useMemoCardHeight } from "./hooks";
+import { useImagePreview, useMemoCardSize } from "./hooks";
 import { computeCommentAmount, MemoViewContext } from "./MemoViewContext";
 import type { MemoViewProps } from "./types";
 
@@ -25,6 +26,8 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
   const [EditorComponent, setEditorComponent] = useState<ComponentType<MemoEditorProps>>();
   const [cardWidth, setCardWidth] = useState(0);
 
+  const t = useTranslate();
+
   const currentUser = useCurrentUser();
   const { userTagsSetting } = useAuth();
   const creator = useResolvedUser(memoData.creator, { enabled: Boolean(showCreator || props.shareImageDialogOpen) });
@@ -32,10 +35,20 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
   const readonly = memoData.creator !== currentUser?.name && !isSuperUser(currentUser);
   const parentPage = parentPageProp || "/";
 
-  // Per-memo user-resized height: drag the bottom-right handle to size a card,
-  // the result is persisted per memo and reapplied every time that memo shows.
-  const { cardRef, cardHeight, resizing, handleResizePointerDown, handleResizePointerMove, handleResizePointerUp, resetCardHeight } =
-    useMemoCardHeight(memoData.name);
+  // Per-memo user-chosen size: drag the bottom-right handle to size a card — down for
+  // height, sideways to cover more columns — and the result is persisted per memo and
+  // reapplied every time that memo shows.
+  const {
+    cardRef,
+    cardHeight,
+    cardSpan,
+    resizing,
+    handleResizePointerDown,
+    handleResizePointerMove,
+    handleResizePointerUp,
+    handleResizeKeyDown,
+    resetCardSize,
+  } = useMemoCardSize(memoData.name);
 
   // Blur content when any tag has blur_content enabled in the current user's tag settings.
   const [showBlurredContent, setShowBlurredContent] = useState(false);
@@ -136,7 +149,9 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
       )}
       ref={cardRef}
       tabIndex={readonly ? -1 : 0}
-      style={appliedCardHeight ? { maxHeight: appliedCardHeight } : undefined}
+      // An explicit height, not a max-height: a card the user dragged taller has to grow past
+      // its content, and a max-height alone can only ever shrink one.
+      style={appliedCardHeight ? { height: appliedCardHeight } : undefined}
     >
       <MemoHeader showCreator={showCreator} showVisibility={showVisibility} showPinned={showPinned} />
 
@@ -146,19 +161,18 @@ const MemoView: React.FC<MemoViewProps> = (props: MemoViewProps) => {
       {resizable && (
         <button
           type="button"
-          aria-label="Resize memo card"
-          title="Drag to resize / double-click to reset"
+          aria-label={t("memo.resize-card")}
+          title={t("memo.resize-card-hint")}
           onPointerDown={handleResizePointerDown}
           onPointerMove={handleResizePointerMove}
           onPointerUp={handleResizePointerUp}
           onPointerCancel={handleResizePointerUp}
-          onDoubleClick={resetCardHeight}
+          onKeyDown={handleResizeKeyDown}
+          onDoubleClick={resetCardSize}
           className={cn(
             "absolute bottom-0.5 right-1 z-10 flex h-5 w-5 items-center justify-center gap-0.5 rounded-sm",
             "cursor-nwse-resize touch-none hover:bg-secondary/60",
-            resizing || cardHeight !== undefined
-              ? "opacity-100"
-              : "opacity-0 transition-opacity group-hover:opacity-100",
+            resizing || cardHeight !== undefined || cardSpan > 1 ? "opacity-100" : "opacity-0 transition-opacity group-hover:opacity-100",
           )}
         >
           <span className="h-3.5 w-0.5 rounded-full bg-foreground/40" />

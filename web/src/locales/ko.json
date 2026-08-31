@@ -213,6 +213,8 @@
       "public": "공개"
     },
     "outline": "개요",
+    "resize-card": "메모 카드 크기 조절",
+    "resize-card-hint": "드래그해서 크기 조절, 방향키로 미세 조절, 더블클릭하면 초기화",
     "share": {
       "active-links": "활성 공유 링크",
       "copied": "복사되었습니다!",
