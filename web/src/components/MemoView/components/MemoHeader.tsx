@@ -18,6 +18,7 @@ import VisibilityIcon from "../../VisibilityIcon";
 import { useMemoActions } from "../hooks";
 import { useMemoViewContext, useMemoViewDerived } from "../MemoViewContext";
 import type { MemoHeaderProps } from "../types";
+import MemoCopyButton from "./MemoCopyButton";
 
 const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, showPinned }) => {
   const t = useTranslate();
@@ -106,6 +107,8 @@ const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, sh
             </Tooltip>
           </TooltipProvider>
         )}
+
+        {!isArchived && <MemoCopyButton content={memo.content} />}
 
         <MemoActionMenu memo={memo} readonly={readonly} onEdit={openEditor} />
       </div>
