@@ -37,3 +37,13 @@ web/coverage/
 
 # 로컬 자격증명 메모(Turso 토큰 등). 절대 커밋하지 말 것.
 env.txt
+
+# The Go binary embeds server/router/frontend/dist (//go:embed dist/*), which fails
+# outright on an empty directory — so index.html is tracked there as a placeholder that
+# says "No embeddable frontend found." The blanket `dist` rule above would otherwise
+# claim that tracked file is ignored, so re-include it explicitly. A parent directory
+# cannot be un-excluded by a rule on the file alone, hence all three lines.
+# Everything else under dist is build output from `cd web && pnpm release` and stays out.
+!server/router/frontend/dist/
+server/router/frontend/dist/*
+!server/router/frontend/dist/index.html
