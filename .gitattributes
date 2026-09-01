@@ -1,0 +1,5 @@
+# web/scripts/write-embed-placeholder.mjs rewrites this file after every `pnpm release`, and
+# it always writes LF. Without pinning the line endings, a checkout on a machine with
+# core.autocrlf=true produces CRLF, the script rewrites it as LF, and the working tree goes
+# dirty again after every build — the exact churn this placeholder arrangement removes.
+server/router/frontend/dist/placeholder.html text eol=lf

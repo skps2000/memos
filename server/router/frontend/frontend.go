@@ -21,6 +21,10 @@ import (
 var embeddedFiles embed.FS
 
 const (
+	frontendIndexFile = "index.html"
+	// Tracked stand-in for a frontend that was never built; see web/scripts/write-embed-placeholder.mjs.
+	frontendPlaceholderFile = "placeholder.html"
+
 	frontendHTMLCacheControl        = "no-cache, no-store, must-revalidate"
 	frontendStaticAssetCacheControl = "public, max-age=3600"
 	frontendHashedAssetCacheControl = "public, max-age=2592000, immutable"
@@ -61,6 +65,15 @@ func (s *FrontendService) Serve(_ context.Context, e *echo.Echo) {
 }
 
 func spaFallbackMiddleware(frontendFS fs.FS) echo.MiddlewareFunc {
+	// A binary built without `cd web && pnpm release` embeds no index.html — only the
+	// placeholder that keeps //go:embed from failing on an empty directory. Serve that
+	// rather than a bare 404, so the response says why the app is missing. Resolved once:
+	// the embedded filesystem cannot change while the process runs.
+	indexFile := frontendIndexFile
+	if _, err := fs.Stat(frontendFS, indexFile); err != nil {
+		indexFile = frontendPlaceholderFile
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			err := next(c)
@@ -74,7 +87,7 @@ func spaFallbackMiddleware(frontendFS fs.FS) echo.MiddlewareFunc {
 			}
 
 			setFrontendCacheHeaders(c, requestPath)
-			return c.FileFS("index.html", frontendFS)
+			return c.FileFS(indexFile, frontendFS)
 		}
 	}
 }

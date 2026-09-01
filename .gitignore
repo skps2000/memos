@@ -39,11 +39,13 @@ web/coverage/
 env.txt
 
 # The Go binary embeds server/router/frontend/dist (//go:embed dist/*), which fails
-# outright on an empty directory — so index.html is tracked there as a placeholder that
-# says "No embeddable frontend found." The blanket `dist` rule above would otherwise
-# claim that tracked file is ignored, so re-include it explicitly. A parent directory
-# cannot be un-excluded by a rule on the file alone, hence all three lines.
-# Everything else under dist is build output from `cd web && pnpm release` and stays out.
+# outright on an empty directory, so one file there has to be tracked. It is placeholder.html
+# and not index.html: `vite build --emptyOutDir` rewrites index.html on every release, so
+# tracking that one left the working tree permanently dirty. web/scripts/write-embed-placeholder.mjs
+# restores placeholder.html after each release; the build never emits that name itself.
+# The blanket `dist` rule above would otherwise claim the tracked file is ignored, so
+# re-include it explicitly. A parent directory cannot be un-excluded by a rule naming only
+# the file, hence all three lines. Everything else under dist is build output and stays out.
 !server/router/frontend/dist/
 server/router/frontend/dist/*
-!server/router/frontend/dist/index.html
+!server/router/frontend/dist/placeholder.html
