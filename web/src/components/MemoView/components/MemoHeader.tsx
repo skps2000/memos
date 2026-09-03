@@ -19,6 +19,7 @@ import { useMemoActions } from "../hooks";
 import { useMemoViewContext, useMemoViewDerived } from "../MemoViewContext";
 import type { MemoHeaderProps } from "../types";
 import MemoCopyButton from "./MemoCopyButton";
+import MemoTelegramButton from "./MemoTelegramButton";
 
 const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, showPinned }) => {
   const t = useTranslate();
@@ -109,6 +110,7 @@ const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, sh
         )}
 
         {!isArchived && <MemoCopyButton content={memo.content} />}
+        {!isArchived && <MemoTelegramButton content={memo.content} />}
 
         <MemoActionMenu memo={memo} readonly={readonly} onEdit={openEditor} />
       </div>

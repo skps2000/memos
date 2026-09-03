@@ -946,6 +946,36 @@
       "load-error": "Failed to load statistics"
     }
   },
+  "telegram": {
+    "bot-token": "Bot token",
+    "chat-id": "Chat ID",
+    "chat-id-found": "Chat ID found.",
+    "chat-id-not-found": "No message found yet. Send any message to your bot in Telegram, then try again.",
+    "clear": "Remove settings",
+    "cleared": "Telegram settings removed.",
+    "configure": "Configure",
+    "configured": "Configured",
+    "find-chat-id": "Find automatically",
+    "finding": "Finding...",
+    "guide": {
+      "docs-link": "Telegram bot documentation",
+      "step-1": "In Telegram, open @BotFather, send /newbot, and follow the prompts. Copy the token it gives you (looks like 123456789:AAH...).",
+      "step-2": "Open a chat with your new bot and press Start (or send any message). Bots cannot message you until you do this.",
+      "step-3": "Press \"Find automatically\" to fill in the chat ID, or send a message to @userinfobot to read your ID.",
+      "step-4": "Save. Both values are kept only in this browser and are never sent to the Memos server."
+    },
+    "invalid-chat-id": "Chat ID must be a number (e.g. 123456789) or a public @username.",
+    "invalid-token": "Bot token looks wrong. It should look like 123456789:AAH...",
+    "not-configured": "Not configured",
+    "saved": "Telegram settings saved.",
+    "send-failed": "Failed to send to Telegram",
+    "send-to-telegram": "Send to Telegram",
+    "sent": "Sent to Telegram.",
+    "setting-description": "Send any memo to your Telegram chat with one click from the memo header. The bot token and chat ID are stored only in this browser.",
+    "setting-title": "Telegram",
+    "setup-description": "Enter your bot token and chat ID once. They are saved in this browser and you will not be asked again.",
+    "setup-title": "Connect Telegram"
+  },
   "tag": {
     "all-tags": "All Tags",
     "create-tag": "Create Tag",

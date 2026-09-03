@@ -1,5 +1,7 @@
 import { create } from "@bufbuild/protobuf";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,8 +10,10 @@ import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
 import { UserSetting_GeneralSetting, UserSetting_GeneralSettingSchema } from "@/types/proto/api/v1/user_service_pb";
 import { loadLocale, useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, convertVisibilityToString } from "@/utils/memo";
+import { clearTelegramConfig, loadTelegramConfig } from "@/utils/telegram";
 import { loadTheme } from "@/utils/theme";
 import LocaleSelect from "../LocaleSelect";
+import TelegramSetupDialog from "../TelegramSetupDialog";
 import ThemeSelect from "../ThemeSelect";
 import VisibilityIcon from "../VisibilityIcon";
 import SettingGroup from "./SettingGroup";
@@ -20,6 +24,14 @@ const PreferencesSection = () => {
   const t = useTranslate();
   const { currentUser, userGeneralSetting: generalSetting, refetchSettings } = useAuth();
   const { mutate: updateUserGeneralSetting, isPending: isUpdatingGeneralSetting } = useUpdateUserGeneralSetting(currentUser?.name);
+  const [telegramDialogOpen, setTelegramDialogOpen] = useState(false);
+  const [telegramConfigured, setTelegramConfigured] = useState(() => loadTelegramConfig() !== null);
+
+  const handleClearTelegram = () => {
+    clearTelegramConfig();
+    setTelegramConfigured(false);
+    toast.success(t("telegram.cleared"));
+  };
 
   const handleLocaleSelectChange = (locale: Locale) => {
     // Apply locale immediately for instant UI feedback and persist to localStorage
@@ -156,6 +168,32 @@ const PreferencesSection = () => {
           </SettingListItem>
         </SettingList>
       </SettingGroup>
+
+      <SettingGroup title={t("telegram.setting-title")} description={t("telegram.setting-description")} showSeparator>
+        <SettingList>
+          <SettingListItem
+            label={t("telegram.send-to-telegram")}
+            description={telegramConfigured ? t("telegram.configured") : t("telegram.not-configured")}
+          >
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setTelegramDialogOpen(true)}>
+                {t("telegram.configure")}
+              </Button>
+              {telegramConfigured && (
+                <Button variant="ghost" size="sm" onClick={handleClearTelegram}>
+                  {t("telegram.clear")}
+                </Button>
+              )}
+            </div>
+          </SettingListItem>
+        </SettingList>
+      </SettingGroup>
+
+      <TelegramSetupDialog
+        open={telegramDialogOpen}
+        onOpenChange={setTelegramDialogOpen}
+        onSaved={() => setTelegramConfigured(true)}
+      />
     </SettingSection>
   );
 };

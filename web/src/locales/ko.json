@@ -517,6 +517,36 @@
       "using-default-color": "기본 색상을 사용합니다."
     }
   },
+  "telegram": {
+    "bot-token": "봇 토큰",
+    "chat-id": "Chat ID",
+    "chat-id-found": "Chat ID를 찾았습니다.",
+    "chat-id-not-found": "아직 받은 메시지가 없습니다. 텔레그램에서 봇에게 아무 메시지나 보낸 뒤 다시 시도하세요.",
+    "clear": "설정 삭제",
+    "cleared": "텔레그램 설정을 삭제했습니다.",
+    "configure": "설정",
+    "configured": "설정됨",
+    "find-chat-id": "자동으로 찾기",
+    "finding": "찾는 중...",
+    "guide": {
+      "docs-link": "텔레그램 봇 공식 문서",
+      "step-1": "텔레그램에서 @BotFather 를 열고 /newbot 을 보낸 뒤 안내에 따라 봇 이름과 사용자명을 입력합니다. 발급되는 토큰(123456789:AAH... 형태)을 복사하세요.",
+      "step-2": "방금 만든 봇과의 대화방을 열어 시작(Start)을 누르거나 아무 메시지나 보냅니다. 이 과정을 거쳐야 봇이 나에게 메시지를 보낼 수 있습니다.",
+      "step-3": "\"자동으로 찾기\"를 누르면 Chat ID가 채워집니다. 직접 확인하려면 @userinfobot 에게 메시지를 보내면 내 ID를 알려줍니다.",
+      "step-4": "저장하면 끝입니다. 두 값은 이 브라우저에만 저장되며 Memos 서버로는 전송되지 않습니다."
+    },
+    "invalid-chat-id": "Chat ID는 숫자(예: 123456789) 또는 공개 @사용자명이어야 합니다.",
+    "invalid-token": "봇 토큰 형식이 올바르지 않습니다. 123456789:AAH... 형태여야 합니다.",
+    "not-configured": "설정 안 됨",
+    "saved": "텔레그램 설정을 저장했습니다.",
+    "send-failed": "텔레그램 전송 실패",
+    "send-to-telegram": "텔레그램으로 전송",
+    "sent": "텔레그램으로 전송했습니다.",
+    "setting-description": "메모 헤더의 버튼 한 번으로 메모를 내 텔레그램 대화방에 보냅니다. 봇 토큰과 Chat ID는 이 브라우저에만 저장됩니다.",
+    "setting-title": "텔레그램",
+    "setup-description": "봇 토큰과 Chat ID를 한 번만 입력하세요. 이 브라우저에 저장되어 다음부터는 다시 묻지 않습니다.",
+    "setup-title": "텔레그램 연결"
+  },
   "tag": {
     "all-tags": "모든 태그",
     "create-tag": "태그 생성",
