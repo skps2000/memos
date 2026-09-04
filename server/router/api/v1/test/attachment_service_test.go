@@ -719,3 +719,34 @@ func TestCreateAttachmentCleansUpStorageWhenInsertFails(t *testing.T) {
 	}
 	require.FileExists(t, storedPath, "the existing attachment must survive the failed upload")
 }
+
+func TestCreateAttachmentUploadSizeLimitAppliesOnlyToNonAdmins(t *testing.T) {
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+	ctx := context.Background()
+
+	// A 1 MiB instance limit with a 2 MiB payload: over for a regular user, fine for an admin.
+	_, err := ts.Store.UpsertInstanceSetting(ctx, &storepb.InstanceSetting{
+		Key: storepb.InstanceSettingKey_STORAGE,
+		Value: &storepb.InstanceSetting_StorageSetting{
+			StorageSetting: &storepb.InstanceStorageSetting{UploadSizeLimitMb: 1},
+		},
+	})
+	require.NoError(t, err)
+	content := make([]byte, 2*1024*1024)
+
+	regular, err := ts.CreateRegularUser(ctx, "size_limit_regular")
+	require.NoError(t, err)
+	_, err = ts.Service.CreateAttachment(ts.CreateUserContext(ctx, regular.ID), &v1pb.CreateAttachmentRequest{
+		Attachment: &v1pb.Attachment{Filename: "big.bin", Type: "application/octet-stream", Content: content},
+	})
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+
+	admin, err := ts.CreateHostUser(ctx, "size_limit_admin")
+	require.NoError(t, err)
+	attachment, err := ts.Service.CreateAttachment(ts.CreateUserContext(ctx, admin.ID), &v1pb.CreateAttachmentRequest{
+		Attachment: &v1pb.Attachment{Filename: "big.bin", Type: "application/octet-stream", Content: content},
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(len(content)), attachment.Size)
+}

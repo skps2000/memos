@@ -113,17 +113,22 @@ func (s *APIV1Service) CreateAttachment(ctx context.Context, request *v1pb.Creat
 		create.Payload.MediaMetadata = inputMediaMetadata
 	}
 
-	instanceStorageSetting, err := s.Store.GetInstanceStorageSetting(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get instance storage setting: %v", err)
-	}
 	size := binary.Size(request.Attachment.Content)
-	uploadSizeLimit := int(instanceStorageSetting.UploadSizeLimitMb) * MebiByte
-	if uploadSizeLimit == 0 {
-		uploadSizeLimit = MaxUploadBufferSizeBytes
-	}
-	if size > uploadSizeLimit {
-		return nil, status.Errorf(codes.InvalidArgument, "file size exceeds the limit")
+	// Admins upload without the instance limit, so a host can put a large file in
+	// without raising the ceiling for everyone. MaxAPIRequestBytes still bounds the
+	// request, since the whole body is buffered in memory before it reaches here.
+	if !isSuperUser(user) {
+		instanceStorageSetting, err := s.Store.GetInstanceStorageSetting(ctx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get instance storage setting: %v", err)
+		}
+		uploadSizeLimit := int(instanceStorageSetting.UploadSizeLimitMb) * MebiByte
+		if uploadSizeLimit == 0 {
+			uploadSizeLimit = MaxUploadBufferSizeBytes
+		}
+		if size > uploadSizeLimit {
+			return nil, status.Errorf(codes.InvalidArgument, "file size exceeds the limit")
+		}
 	}
 	create.Size = int64(size)
 	create.Blob = request.Attachment.Content
