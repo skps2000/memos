@@ -9,3 +9,7 @@ server/router/frontend/dist/placeholder.html text eol=lf
 # 모든 원격 명령에 붙어 전부 실패한다. 스크립트 안에서도 CR을 걷어내지만, CRLF 체크아웃은
 # Git Bash에서 shebang 자체를 깨뜨린다.
 *.sh text eol=lf
+
+# systemd는 CR을 건너뛰지만, deploy.sh가 서버의 유닛 파일과 cmp 비교하므로
+# 체크아웃마다 줄바꿈이 달라지면 바뀐 게 없는데도 매번 유닛을 교체하고 daemon-reload 한다.
+*.service text eol=lf
