@@ -10,6 +10,10 @@ type MemoShare struct {
 	CreatorID int32
 	CreatedTs int64
 	ExpiresTs *int64 // nil means the share never expires
+	// AllowDownload permits the link holder to download the memo export bundle.
+	AllowDownload bool
+	// IncludeComments exposes the memo's comments to the link holder.
+	IncludeComments bool
 }
 
 // FindMemoShare is used to filter memo shares in list/get queries.

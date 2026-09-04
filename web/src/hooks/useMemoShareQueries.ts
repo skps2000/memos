@@ -9,6 +9,7 @@ import {
   DeleteMemoShareRequestSchema,
   GetSharedMemoRequestSchema,
   ListMemoSharesRequestSchema,
+  ListSharedMemoCommentsRequestSchema,
   MemoShareSchema,
 } from "@/types/proto/api/v1/memo_service_pb";
 
@@ -17,6 +18,7 @@ export const memoShareKeys = {
   all: ["memo-shares"] as const,
   list: (memoName: string) => [...memoShareKeys.all, "list", memoName] as const,
   byShare: (shareToken: string) => [...memoShareKeys.all, "by-share", shareToken] as const,
+  shareComments: (shareToken: string) => [...memoShareKeys.all, "by-share", shareToken, "comments"] as const,
 };
 
 /** Lists all active share links for a memo (creator-only). */
@@ -35,9 +37,23 @@ export function useMemoShares(memoName: string, options?: { enabled?: boolean })
 export function useCreateMemoShare() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ memoName, expireTime }: { memoName: string; expireTime?: Date }) => {
+    mutationFn: async ({
+      memoName,
+      expireTime,
+      allowDownload,
+      includeComments,
+    }: {
+      memoName: string;
+      expireTime?: Date;
+      allowDownload?: boolean;
+      includeComments?: boolean;
+    }) => {
+      // Both flags are left unset when they are not narrowed, which the server
+      // reads as "enabled" — the default a share link is created with.
       const memoShare = create(MemoShareSchema, {
         expireTime: expireTime ? timestampFromDate(expireTime) : undefined,
+        allowDownload,
+        includeComments,
       });
       const response = await memoServiceClient.createMemoShare(create(CreateMemoShareRequestSchema, { parent: memoName, memoShare }));
       return response;
@@ -69,6 +85,19 @@ export function useSharedMemo(shareToken: string, options?: { enabled?: boolean 
     queryFn: async () => {
       const memo = await memoServiceClient.getSharedMemo(create(GetSharedMemoRequestSchema, { shareToken }));
       return memo;
+    },
+    enabled: options?.enabled ?? !!shareToken,
+    retry: false, // Don't retry NOT_FOUND — the link is invalid or expired
+  });
+}
+
+/** Resolves the comments of a shared memo. Empty when the link hides them. */
+export function useSharedMemoComments(shareToken: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: memoShareKeys.shareComments(shareToken),
+    queryFn: async () => {
+      const response = await memoServiceClient.listSharedMemoComments(create(ListSharedMemoCommentsRequestSchema, { shareToken }));
+      return response.memos;
     },
     enabled: options?.enabled ?? !!shareToken,
     retry: false, // Don't retry NOT_FOUND — the link is invalid or expired

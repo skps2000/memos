@@ -1267,6 +1267,35 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/shares/{shareToken}/comments:
+        get:
+            tags:
+                - MemoService
+            description: |-
+                ListSharedMemoComments lists the comments of a shared memo. No authentication required.
+                 Returns NOT_FOUND if the token is invalid or expired, and an empty list if the
+                 share was created with comments hidden.
+            operationId: MemoService_ListSharedMemoComments
+            parameters:
+                - name: shareToken
+                  in: path
+                  description: Required. The opaque bearer token extracted from the share URL.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListSharedMemoCommentsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/v1/shares/{shareToken}/memo:
         get:
             tags:
@@ -3194,6 +3223,14 @@ components:
                 nextPageToken:
                     type: string
                     description: A token for the next page of results.
+        ListSharedMemoCommentsResponse:
+            type: object
+            properties:
+                memos:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Memo'
+                    description: The comments of the shared memo, oldest first.
         ListUserNotificationsResponse:
             type: object
             properties:
@@ -3437,6 +3474,16 @@ components:
                         Optional. When set, the share link stops working after this time.
                          If unset, the link never expires.
                     format: date-time
+                allowDownload:
+                    type: boolean
+                    description: |-
+                        Optional. Whether the link holder may download the memo as an export bundle.
+                         Unset on create means enabled.
+                includeComments:
+                    type: boolean
+                    description: |-
+                        Optional. Whether the memo's comments are visible to the link holder.
+                         Unset on create means enabled.
             description: MemoShare is an access grant that permits read-only access to a memo via an opaque bearer token.
         MemoView:
             required:

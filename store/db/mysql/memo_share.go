@@ -10,9 +10,9 @@ import (
 )
 
 func (d *DB) CreateMemoShare(ctx context.Context, create *store.MemoShare) (*store.MemoShare, error) {
-	fields := []string{"`uid`", "`memo_id`", "`creator_id`"}
-	placeholders := []string{"?", "?", "?"}
-	args := []any{create.UID, create.MemoID, create.CreatorID}
+	fields := []string{"`uid`", "`memo_id`", "`creator_id`", "`allow_download`", "`include_comments`"}
+	placeholders := []string{"?", "?", "?", "?", "?"}
+	args := []any{create.UID, create.MemoID, create.CreatorID, create.AllowDownload, create.IncludeComments}
 
 	if create.ExpiresTs != nil {
 		fields = append(fields, "`expires_ts`")
@@ -64,7 +64,9 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			memo_id,
 			creator_id,
 			created_ts,
-			expires_ts
+			expires_ts,
+			allow_download,
+			include_comments
 		FROM memo_share
 		WHERE `+strings.Join(where, " AND ")+`
 		ORDER BY id ASC`,
@@ -85,6 +87,8 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			&ms.CreatorID,
 			&ms.CreatedTs,
 			&ms.ExpiresTs,
+			&ms.AllowDownload,
+			&ms.IncludeComments,
 		); err != nil {
 			return nil, err
 		}

@@ -10,8 +10,8 @@ import (
 )
 
 func (d *DB) CreateMemoShare(ctx context.Context, create *store.MemoShare) (*store.MemoShare, error) {
-	fields := []string{"uid", "memo_id", "creator_id"}
-	args := []any{create.UID, create.MemoID, create.CreatorID}
+	fields := []string{"uid", "memo_id", "creator_id", "allow_download", "include_comments"}
+	args := []any{create.UID, create.MemoID, create.CreatorID, create.AllowDownload, create.IncludeComments}
 
 	if create.ExpiresTs != nil {
 		fields = append(fields, "expires_ts")
@@ -51,7 +51,9 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			memo_id,
 			creator_id,
 			created_ts,
-			expires_ts
+			expires_ts,
+			allow_download,
+			include_comments
 		FROM memo_share
 		WHERE `+strings.Join(where, " AND ")+`
 		ORDER BY id ASC`,
@@ -72,6 +74,8 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			&ms.CreatorID,
 			&ms.CreatedTs,
 			&ms.ExpiresTs,
+			&ms.AllowDownload,
+			&ms.IncludeComments,
 		); err != nil {
 			return nil, err
 		}
@@ -108,7 +112,9 @@ func (d *DB) GetMemoShare(ctx context.Context, find *store.FindMemoShare) (*stor
 			memo_id,
 			creator_id,
 			created_ts,
-			expires_ts
+			expires_ts,
+			allow_download,
+			include_comments
 		FROM memo_share
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT 1`,
@@ -120,6 +126,8 @@ func (d *DB) GetMemoShare(ctx context.Context, find *store.FindMemoShare) (*stor
 		&ms.CreatorID,
 		&ms.CreatedTs,
 		&ms.ExpiresTs,
+		&ms.AllowDownload,
+		&ms.IncludeComments,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

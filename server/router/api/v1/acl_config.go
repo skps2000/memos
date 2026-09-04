@@ -41,7 +41,8 @@ var PublicMethods = map[string]struct{}{
 	"/memos.api.v1.AttachmentService/GetAttachment": {},
 
 	// Memo sharing - share-token endpoints require no authentication
-	"/memos.api.v1.MemoService/GetSharedMemo": {},
+	"/memos.api.v1.MemoService/GetSharedMemo":          {},
+	"/memos.api.v1.MemoService/ListSharedMemoComments": {},
 }
 
 // IsPublicMethod checks if a procedure path is public (no authentication required).
@@ -74,7 +75,8 @@ var AuthBootstrapMethods = map[string]struct{}{
 	"/memos.api.v1.UserService/CreateUser": {},
 
 	// Memo sharing - share-token access stays public even on a private instance.
-	"/memos.api.v1.MemoService/GetSharedMemo": {},
+	"/memos.api.v1.MemoService/GetSharedMemo":          {},
+	"/memos.api.v1.MemoService/ListSharedMemoComments": {},
 }
 
 // IsAuthBootstrapMethod reports whether an anonymous request to procedure is one

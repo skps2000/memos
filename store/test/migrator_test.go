@@ -579,6 +579,14 @@ func TestMigrationCopiesInstanceTagsToUserSettings(t *testing.T) {
 		CREATE TABLE memo (
 			id INTEGER PRIMARY KEY AUTOINCREMENT
 		);
+		CREATE TABLE memo_share (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			uid TEXT NOT NULL UNIQUE,
+			memo_id INTEGER NOT NULL,
+			creator_id INTEGER NOT NULL,
+			created_ts BIGINT NOT NULL DEFAULT (strftime('%s', 'now')),
+			expires_ts BIGINT DEFAULT NULL
+		);
 		CREATE TABLE attachment (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			storage_type TEXT NOT NULL DEFAULT '',
@@ -730,6 +738,14 @@ func legacySchemaFixture(driver string) string {
 				UNIQUE(user_id, ` + "`key`" + `)
 			);
 			CREATE TABLE memo (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY);
+			CREATE TABLE memo_share (
+				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+				uid VARCHAR(255) NOT NULL UNIQUE,
+				memo_id INT NOT NULL,
+				creator_id INT NOT NULL,
+				created_ts BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+				expires_ts BIGINT DEFAULT NULL
+			);
 			CREATE TABLE attachment (
 				id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 				uid VARCHAR(256) NOT NULL UNIQUE,
@@ -772,6 +788,14 @@ func legacySchemaFixture(driver string) string {
 				UNIQUE(user_id, key)
 			);
 			CREATE TABLE memo (id SERIAL PRIMARY KEY);
+			CREATE TABLE memo_share (
+				id SERIAL PRIMARY KEY,
+				uid TEXT NOT NULL UNIQUE,
+				memo_id INTEGER NOT NULL,
+				creator_id INTEGER NOT NULL,
+				created_ts BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()),
+				expires_ts BIGINT DEFAULT NULL
+			);
 			CREATE TABLE attachment (
 				id SERIAL PRIMARY KEY,
 				uid TEXT NOT NULL UNIQUE,
@@ -816,6 +840,14 @@ func legacySchemaFixture(driver string) string {
 				UNIQUE(user_id, key)
 			);
 			CREATE TABLE memo (id INTEGER PRIMARY KEY AUTOINCREMENT);
+			CREATE TABLE memo_share (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				uid TEXT NOT NULL UNIQUE,
+				memo_id INTEGER NOT NULL,
+				creator_id INTEGER NOT NULL,
+				created_ts BIGINT NOT NULL DEFAULT (strftime('%s', 'now')),
+				expires_ts BIGINT DEFAULT NULL
+			);
 			CREATE TABLE attachment (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				uid TEXT NOT NULL UNIQUE,

@@ -59,12 +59,26 @@ func (s *APIV1Service) CreateMemoShare(ctx context.Context, request *v1pb.Create
 		expiresTs = &ts
 	}
 
+	// Both options default to enabled: a share link is meant to stand in for the
+	// memo itself, so the holder can read the comments and download the export.
+	allowDownload, includeComments := true, true
+	if request.MemoShare != nil {
+		if request.MemoShare.AllowDownload != nil {
+			allowDownload = request.MemoShare.GetAllowDownload()
+		}
+		if request.MemoShare.IncludeComments != nil {
+			includeComments = request.MemoShare.GetIncludeComments()
+		}
+	}
+
 	// Generate a URL-safe token using shortuuid (base57-encoded UUID v4, 22 chars, 122-bit entropy).
 	ms, err := s.Store.CreateMemoShare(ctx, &store.MemoShare{
-		UID:       shortuuid.New(),
-		MemoID:    memo.ID,
-		CreatorID: user.ID,
-		ExpiresTs: expiresTs,
+		UID:             shortuuid.New(),
+		MemoID:          memo.ID,
+		CreatorID:       user.ID,
+		ExpiresTs:       expiresTs,
+		AllowDownload:   allowDownload,
+		IncludeComments: includeComments,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create memo share")
@@ -157,18 +171,9 @@ func (s *APIV1Service) DeleteMemoShare(ctx context.Context, request *v1pb.Delete
 // GetSharedMemo resolves a share token to its memo. No authentication required.
 // Returns NOT_FOUND for invalid or expired tokens (no information leakage).
 func (s *APIV1Service) GetSharedMemo(ctx context.Context, request *v1pb.GetSharedMemoRequest) (*v1pb.Memo, error) {
-	ms, err := s.getActiveMemoShare(ctx, request.ShareToken)
+	_, memo, err := s.resolveSharedMemo(ctx, request.ShareToken)
 	if err != nil {
 		return nil, err
-	}
-
-	memo, err := s.Store.GetMemo(ctx, &store.FindMemo{ID: &ms.MemoID})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get memo")
-	}
-	// Treat archived or missing memos the same as an invalid token — no information leakage.
-	if memo == nil || memo.RowStatus != store.Normal || memo.ParentUID != nil {
-		return nil, status.Errorf(codes.NotFound, "not found")
 	}
 
 	reactions, err := s.Store.ListReactions(ctx, &store.FindReaction{
@@ -196,6 +201,59 @@ func (s *APIV1Service) GetSharedMemo(ctx context.Context, request *v1pb.GetShare
 	return memoMessage, nil
 }
 
+// sharedMemoCommentPageSize caps how many comments a share link returns in one call.
+// Shared memos are read-only single pages, so one generous page stands in for pagination.
+const sharedMemoCommentPageSize = 100
+
+// ListSharedMemoComments resolves a share token and returns the memo's comments.
+// No authentication required. Returns NOT_FOUND for invalid or expired tokens, and
+// an empty list when the share was created with comments hidden.
+func (s *APIV1Service) ListSharedMemoComments(ctx context.Context, request *v1pb.ListSharedMemoCommentsRequest) (*v1pb.ListSharedMemoCommentsResponse, error) {
+	ms, memo, err := s.resolveSharedMemo(ctx, request.ShareToken)
+	if err != nil {
+		return nil, err
+	}
+	if !ms.IncludeComments {
+		return &v1pb.ListSharedMemoCommentsResponse{Memos: []*v1pb.Memo{}}, nil
+	}
+
+	// A share token authorizes this memo, so its comments come along; their
+	// relation graph does not, since it can point at memos the holder cannot read.
+	page, err := s.listMemoCommentsPage(ctx, memo, sharedMemoCommentPageSize, "", MemoNamePrefix+memo.UID, false)
+	if err != nil {
+		return nil, err
+	}
+	comments := page.Memos
+	if comments == nil {
+		comments = []*v1pb.Memo{}
+	}
+	// A comment's attachments belong to whoever wrote it, and the file routes
+	// deliberately refuse a parent's share token for them. Drop them here so the
+	// page never advertises files the holder cannot fetch.
+	for _, comment := range comments {
+		comment.Attachments = nil
+	}
+	return &v1pb.ListSharedMemoCommentsResponse{Memos: comments}, nil
+}
+
+// resolveSharedMemo resolves a share token to its active share and memo.
+// Invalid tokens, expired tokens, and memos that are archived, deleted, or turned
+// into a comment all fail the same way so a token cannot be used to probe state.
+func (s *APIV1Service) resolveSharedMemo(ctx context.Context, shareToken string) (*store.MemoShare, *store.Memo, error) {
+	ms, err := s.getActiveMemoShare(ctx, shareToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	memo, err := s.Store.GetMemo(ctx, &store.FindMemo{ID: &ms.MemoID})
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "failed to get memo")
+	}
+	if memo == nil || memo.RowStatus != store.Normal || memo.ParentUID != nil {
+		return nil, nil, status.Errorf(codes.NotFound, "not found")
+	}
+	return ms, memo, nil
+}
+
 // isMemoShareExpired returns true if the share has a defined expiry that has already passed.
 func isMemoShareExpired(ms *store.MemoShare) bool {
 	return ms.ExpiresTs != nil && time.Now().Unix() > *ms.ExpiresTs
@@ -221,8 +279,10 @@ func stringPointer(s string) *string {
 func convertMemoShareFromStore(ms *store.MemoShare, memoUID string) *v1pb.MemoShare {
 	name := fmt.Sprintf("%s%s/%s%s", MemoNamePrefix, memoUID, MemoShareNamePrefix, ms.UID)
 	pb := &v1pb.MemoShare{
-		Name:       name,
-		CreateTime: timestamppb.New(time.Unix(ms.CreatedTs, 0)),
+		Name:            name,
+		CreateTime:      timestamppb.New(time.Unix(ms.CreatedTs, 0)),
+		AllowDownload:   &ms.AllowDownload,
+		IncludeComments: &ms.IncludeComments,
 	}
 	if ms.ExpiresTs != nil {
 		pb.ExpireTime = timestamppb.New(time.Unix(*ms.ExpiresTs, 0))

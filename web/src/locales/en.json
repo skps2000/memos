@@ -389,7 +389,16 @@
     "resize-card-hint": "Drag to resize, arrow keys to nudge, double-click to reset",
     "search-placeholder": "Search memos...",
     "shown-time": "Shown time",
+    "export": {
+      "archive": "Download as ZIP",
+      "disabled-for-link": "Downloads are turned off for this share link.",
+      "failed": "Failed to export this memo",
+      "json": "Download metadata (JSON)",
+      "markdown": "Download as Markdown"
+    },
     "share": {
+      "allow-download": "Allow downloads",
+      "allow-download-description": "Anyone with the link can download the memo and its files.",
       "active-links": "Active share links",
       "copied": "Copied!",
       "copy": "Copy link",
@@ -401,6 +410,10 @@
       "expiry-7-days": "7 days",
       "expiry-label": "Expires",
       "expiry-never": "Never",
+      "grants-comments": "Comments visible",
+      "grants-download": "Downloads on",
+      "include-comments": "Show comments",
+      "include-comments-description": "Anyone with the link can read the comments on this memo.",
       "image-description": "Preview rendered at your current device width ({{width}}px).",
       "image-download": "Download PNG",
       "image-download-failed": "Failed to export image",

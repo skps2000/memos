@@ -20,26 +20,27 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MemoService_CreateMemo_FullMethodName           = "/memos.api.v1.MemoService/CreateMemo"
-	MemoService_ListMemos_FullMethodName            = "/memos.api.v1.MemoService/ListMemos"
-	MemoService_GetMemo_FullMethodName              = "/memos.api.v1.MemoService/GetMemo"
-	MemoService_UpdateMemo_FullMethodName           = "/memos.api.v1.MemoService/UpdateMemo"
-	MemoService_DeleteMemo_FullMethodName           = "/memos.api.v1.MemoService/DeleteMemo"
-	MemoService_SetMemoAttachments_FullMethodName   = "/memos.api.v1.MemoService/SetMemoAttachments"
-	MemoService_ListMemoAttachments_FullMethodName  = "/memos.api.v1.MemoService/ListMemoAttachments"
-	MemoService_SetMemoRelations_FullMethodName     = "/memos.api.v1.MemoService/SetMemoRelations"
-	MemoService_ListMemoRelations_FullMethodName    = "/memos.api.v1.MemoService/ListMemoRelations"
-	MemoService_CreateMemoComment_FullMethodName    = "/memos.api.v1.MemoService/CreateMemoComment"
-	MemoService_ListMemoComments_FullMethodName     = "/memos.api.v1.MemoService/ListMemoComments"
-	MemoService_ListMemoReactions_FullMethodName    = "/memos.api.v1.MemoService/ListMemoReactions"
-	MemoService_UpsertMemoReaction_FullMethodName   = "/memos.api.v1.MemoService/UpsertMemoReaction"
-	MemoService_DeleteMemoReaction_FullMethodName   = "/memos.api.v1.MemoService/DeleteMemoReaction"
-	MemoService_CreateMemoShare_FullMethodName      = "/memos.api.v1.MemoService/CreateMemoShare"
-	MemoService_ListMemoShares_FullMethodName       = "/memos.api.v1.MemoService/ListMemoShares"
-	MemoService_DeleteMemoShare_FullMethodName      = "/memos.api.v1.MemoService/DeleteMemoShare"
-	MemoService_GetSharedMemo_FullMethodName        = "/memos.api.v1.MemoService/GetSharedMemo"
-	MemoService_GetLinkMetadata_FullMethodName      = "/memos.api.v1.MemoService/GetLinkMetadata"
-	MemoService_BatchGetLinkMetadata_FullMethodName = "/memos.api.v1.MemoService/BatchGetLinkMetadata"
+	MemoService_CreateMemo_FullMethodName             = "/memos.api.v1.MemoService/CreateMemo"
+	MemoService_ListMemos_FullMethodName              = "/memos.api.v1.MemoService/ListMemos"
+	MemoService_GetMemo_FullMethodName                = "/memos.api.v1.MemoService/GetMemo"
+	MemoService_UpdateMemo_FullMethodName             = "/memos.api.v1.MemoService/UpdateMemo"
+	MemoService_DeleteMemo_FullMethodName             = "/memos.api.v1.MemoService/DeleteMemo"
+	MemoService_SetMemoAttachments_FullMethodName     = "/memos.api.v1.MemoService/SetMemoAttachments"
+	MemoService_ListMemoAttachments_FullMethodName    = "/memos.api.v1.MemoService/ListMemoAttachments"
+	MemoService_SetMemoRelations_FullMethodName       = "/memos.api.v1.MemoService/SetMemoRelations"
+	MemoService_ListMemoRelations_FullMethodName      = "/memos.api.v1.MemoService/ListMemoRelations"
+	MemoService_CreateMemoComment_FullMethodName      = "/memos.api.v1.MemoService/CreateMemoComment"
+	MemoService_ListMemoComments_FullMethodName       = "/memos.api.v1.MemoService/ListMemoComments"
+	MemoService_ListMemoReactions_FullMethodName      = "/memos.api.v1.MemoService/ListMemoReactions"
+	MemoService_UpsertMemoReaction_FullMethodName     = "/memos.api.v1.MemoService/UpsertMemoReaction"
+	MemoService_DeleteMemoReaction_FullMethodName     = "/memos.api.v1.MemoService/DeleteMemoReaction"
+	MemoService_CreateMemoShare_FullMethodName        = "/memos.api.v1.MemoService/CreateMemoShare"
+	MemoService_ListMemoShares_FullMethodName         = "/memos.api.v1.MemoService/ListMemoShares"
+	MemoService_DeleteMemoShare_FullMethodName        = "/memos.api.v1.MemoService/DeleteMemoShare"
+	MemoService_GetSharedMemo_FullMethodName          = "/memos.api.v1.MemoService/GetSharedMemo"
+	MemoService_ListSharedMemoComments_FullMethodName = "/memos.api.v1.MemoService/ListSharedMemoComments"
+	MemoService_GetLinkMetadata_FullMethodName        = "/memos.api.v1.MemoService/GetLinkMetadata"
+	MemoService_BatchGetLinkMetadata_FullMethodName   = "/memos.api.v1.MemoService/BatchGetLinkMetadata"
 )
 
 // MemoServiceClient is the client API for MemoService service.
@@ -90,6 +91,10 @@ type MemoServiceClient interface {
 	// GetSharedMemo resolves a share token to its memo. No authentication required.
 	// Returns NOT_FOUND if the token is invalid or expired.
 	GetSharedMemo(ctx context.Context, in *GetSharedMemoRequest, opts ...grpc.CallOption) (*Memo, error)
+	// ListSharedMemoComments lists the comments of a shared memo. No authentication required.
+	// Returns NOT_FOUND if the token is invalid or expired, and an empty list if the
+	// share was created with comments hidden.
+	ListSharedMemoComments(ctx context.Context, in *ListSharedMemoCommentsRequest, opts ...grpc.CallOption) (*ListSharedMemoCommentsResponse, error)
 	// GetLinkMetadata gets metadata for a link.
 	GetLinkMetadata(ctx context.Context, in *GetLinkMetadataRequest, opts ...grpc.CallOption) (*LinkMetadata, error)
 	// BatchGetLinkMetadata gets metadata for links.
@@ -284,6 +289,16 @@ func (c *memoServiceClient) GetSharedMemo(ctx context.Context, in *GetSharedMemo
 	return out, nil
 }
 
+func (c *memoServiceClient) ListSharedMemoComments(ctx context.Context, in *ListSharedMemoCommentsRequest, opts ...grpc.CallOption) (*ListSharedMemoCommentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSharedMemoCommentsResponse)
+	err := c.cc.Invoke(ctx, MemoService_ListSharedMemoComments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *memoServiceClient) GetLinkMetadata(ctx context.Context, in *GetLinkMetadataRequest, opts ...grpc.CallOption) (*LinkMetadata, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LinkMetadata)
@@ -352,6 +367,10 @@ type MemoServiceServer interface {
 	// GetSharedMemo resolves a share token to its memo. No authentication required.
 	// Returns NOT_FOUND if the token is invalid or expired.
 	GetSharedMemo(context.Context, *GetSharedMemoRequest) (*Memo, error)
+	// ListSharedMemoComments lists the comments of a shared memo. No authentication required.
+	// Returns NOT_FOUND if the token is invalid or expired, and an empty list if the
+	// share was created with comments hidden.
+	ListSharedMemoComments(context.Context, *ListSharedMemoCommentsRequest) (*ListSharedMemoCommentsResponse, error)
 	// GetLinkMetadata gets metadata for a link.
 	GetLinkMetadata(context.Context, *GetLinkMetadataRequest) (*LinkMetadata, error)
 	// BatchGetLinkMetadata gets metadata for links.
@@ -419,6 +438,9 @@ func (UnimplementedMemoServiceServer) DeleteMemoShare(context.Context, *DeleteMe
 }
 func (UnimplementedMemoServiceServer) GetSharedMemo(context.Context, *GetSharedMemoRequest) (*Memo, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSharedMemo not implemented")
+}
+func (UnimplementedMemoServiceServer) ListSharedMemoComments(context.Context, *ListSharedMemoCommentsRequest) (*ListSharedMemoCommentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSharedMemoComments not implemented")
 }
 func (UnimplementedMemoServiceServer) GetLinkMetadata(context.Context, *GetLinkMetadataRequest) (*LinkMetadata, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLinkMetadata not implemented")
@@ -771,6 +793,24 @@ func _MemoService_GetSharedMemo_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MemoService_ListSharedMemoComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSharedMemoCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MemoServiceServer).ListSharedMemoComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MemoService_ListSharedMemoComments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MemoServiceServer).ListSharedMemoComments(ctx, req.(*ListSharedMemoCommentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MemoService_GetLinkMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetLinkMetadataRequest)
 	if err := dec(in); err != nil {
@@ -885,6 +925,10 @@ var MemoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSharedMemo",
 			Handler:    _MemoService_GetSharedMemo_Handler,
+		},
+		{
+			MethodName: "ListSharedMemoComments",
+			Handler:    _MemoService_ListSharedMemoComments_Handler,
 		},
 		{
 			MethodName: "GetLinkMetadata",

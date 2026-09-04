@@ -152,17 +152,31 @@ func (s *APIV1Service) ListMemoComments(ctx context.Context, request *v1pb.ListM
 		return nil, err
 	}
 
+	return s.listMemoCommentsPage(ctx, memo, request.PageSize, request.PageToken, request.Name, true)
+}
+
+// listMemoCommentsPage builds one page of memo's comments. The caller is responsible
+// for authorizing the read. Pass includeRelations=false to keep each comment's
+// relation graph — which can point at memos the caller cannot read — out of the result.
+func (s *APIV1Service) listMemoCommentsPage(
+	ctx context.Context,
+	memo *store.Memo,
+	pageSize int32,
+	pageToken string,
+	parentName string,
+	includeRelations bool,
+) (*v1pb.ListMemoCommentsResponse, error) {
 	memoRelationComment := store.MemoRelationComment
 	var limit, offset int
-	if request.PageToken != "" {
-		var pageToken v1pb.PageToken
-		if err := unmarshalPageToken(request.PageToken, &pageToken); err != nil {
+	if pageToken != "" {
+		var token v1pb.PageToken
+		if err := unmarshalPageToken(pageToken, &token); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid page token: %v", err)
 		}
-		limit = normalizePageSize(pageToken.Limit)
-		offset = max(int(pageToken.Offset), 0)
+		limit = normalizePageSize(token.Limit)
+		offset = max(int(token.Offset), 0)
 	} else {
-		limit = normalizePageSize(request.PageSize)
+		limit = normalizePageSize(pageSize)
 	}
 	limitPlusOne := limit + 1
 	normal := store.Normal
@@ -233,9 +247,12 @@ func (s *APIV1Service) ListMemoComments(ctx context.Context, request *v1pb.ListM
 	}
 
 	// RELATIONS (batch load to avoid N+1)
-	relationMap, err := s.batchConvertMemoRelations(ctx, memos, false)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to batch load memo relations")
+	relationMap := map[int32][]*v1pb.MemoRelation{}
+	if includeRelations {
+		relationMap, err = s.batchConvertMemoRelations(ctx, memos, false)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to batch load memo relations")
+		}
 	}
 	creatorIDs := make([]int32, 0, len(memos)+len(reactions))
 	for _, memo := range memos {
@@ -262,7 +279,7 @@ func (s *APIV1Service) ListMemoComments(ctx context.Context, request *v1pb.ListM
 					slog.Int64("memo_id", int64(m.ID)),
 					slog.String("memo_uid", m.UID),
 					slog.Int64("creator_id", int64(m.CreatorID)),
-					slog.String("parent_name", request.Name),
+					slog.String("parent_name", parentName),
 				)
 				continue
 			}

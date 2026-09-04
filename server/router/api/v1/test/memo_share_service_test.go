@@ -311,3 +311,204 @@ func parseMemoIDFromNameForTest(t *testing.T, ts *TestService, memoName string) 
 
 	return memo.ID
 }
+
+func TestCreateMemoShare_DefaultsBothOptionsToEnabled(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	user, err := ts.CreateRegularUser(ctx, "share-defaults")
+	require.NoError(t, err)
+	userCtx := ts.CreateUserContext(ctx, user.ID)
+
+	memo, err := ts.Service.CreateMemo(userCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{
+			Content:    "memo with defaults",
+			Visibility: apiv1.Visibility_PRIVATE,
+		},
+	})
+	require.NoError(t, err)
+
+	share, err := ts.Service.CreateMemoShare(userCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+	require.True(t, share.GetAllowDownload())
+	require.True(t, share.GetIncludeComments())
+
+	listed, err := ts.Service.ListMemoShares(userCtx, &apiv1.ListMemoSharesRequest{Parent: memo.Name})
+	require.NoError(t, err)
+	require.Len(t, listed.MemoShares, 1)
+	require.True(t, listed.MemoShares[0].GetAllowDownload())
+	require.True(t, listed.MemoShares[0].GetIncludeComments())
+}
+
+func TestCreateMemoShare_HonorsDisabledOptions(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	user, err := ts.CreateRegularUser(ctx, "share-options-off")
+	require.NoError(t, err)
+	userCtx := ts.CreateUserContext(ctx, user.ID)
+
+	memo, err := ts.Service.CreateMemo(userCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{
+			Content:    "memo with options off",
+			Visibility: apiv1.Visibility_PRIVATE,
+		},
+	})
+	require.NoError(t, err)
+
+	disabled := false
+	share, err := ts.Service.CreateMemoShare(userCtx, &apiv1.CreateMemoShareRequest{
+		Parent: memo.Name,
+		MemoShare: &apiv1.MemoShare{
+			AllowDownload:   &disabled,
+			IncludeComments: &disabled,
+		},
+	})
+	require.NoError(t, err)
+	require.False(t, share.GetAllowDownload())
+	require.False(t, share.GetIncludeComments())
+}
+
+func TestListSharedMemoComments_ReturnsCommentsWhenIncluded(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	owner, err := ts.CreateRegularUser(ctx, "share-comments-owner")
+	require.NoError(t, err)
+	commenter, err := ts.CreateRegularUser(ctx, "share-comments-commenter")
+	require.NoError(t, err)
+
+	ownerCtx := ts.CreateUserContext(ctx, owner.ID)
+	commenterCtx := ts.CreateUserContext(ctx, commenter.ID)
+
+	memo, err := ts.Service.CreateMemo(ownerCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{
+			Content:    "shared memo with comments",
+			Visibility: apiv1.Visibility_PUBLIC,
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ts.Service.CreateMemoComment(commenterCtx, &apiv1.CreateMemoCommentRequest{
+		Name: memo.Name,
+		Comment: &apiv1.Memo{
+			Content:    "a shared comment",
+			Visibility: apiv1.Visibility_PUBLIC,
+		},
+	})
+	require.NoError(t, err)
+
+	share, err := ts.Service.CreateMemoShare(ownerCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+	shareToken := share.Name[strings.LastIndex(share.Name, "/")+1:]
+
+	// Anonymous: the token is the only credential the caller has.
+	resp, err := ts.Service.ListSharedMemoComments(ctx, &apiv1.ListSharedMemoCommentsRequest{
+		ShareToken: shareToken,
+	})
+	require.NoError(t, err)
+	require.Len(t, resp.Memos, 1)
+	require.Equal(t, "a shared comment", resp.Memos[0].Content)
+	require.Empty(t, resp.Memos[0].Relations)
+}
+
+func TestListSharedMemoComments_HidesCommentsWhenDisabled(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	owner, err := ts.CreateRegularUser(ctx, "share-comments-hidden")
+	require.NoError(t, err)
+	ownerCtx := ts.CreateUserContext(ctx, owner.ID)
+
+	memo, err := ts.Service.CreateMemo(ownerCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{
+			Content:    "shared memo hiding comments",
+			Visibility: apiv1.Visibility_PUBLIC,
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ts.Service.CreateMemoComment(ownerCtx, &apiv1.CreateMemoCommentRequest{
+		Name: memo.Name,
+		Comment: &apiv1.Memo{
+			Content:    "a hidden comment",
+			Visibility: apiv1.Visibility_PUBLIC,
+		},
+	})
+	require.NoError(t, err)
+
+	hidden := false
+	share, err := ts.Service.CreateMemoShare(ownerCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{IncludeComments: &hidden},
+	})
+	require.NoError(t, err)
+	shareToken := share.Name[strings.LastIndex(share.Name, "/")+1:]
+
+	resp, err := ts.Service.ListSharedMemoComments(ctx, &apiv1.ListSharedMemoCommentsRequest{
+		ShareToken: shareToken,
+	})
+	require.NoError(t, err)
+	require.Empty(t, resp.Memos)
+}
+
+func TestListSharedMemoComments_ReturnsNotFoundForExpiredShare(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	owner, err := ts.CreateRegularUser(ctx, "share-comments-expired")
+	require.NoError(t, err)
+	ownerCtx := ts.CreateUserContext(ctx, owner.ID)
+
+	memo, err := ts.Service.CreateMemo(ownerCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{
+			Content:    "expired share",
+			Visibility: apiv1.Visibility_PRIVATE,
+		},
+	})
+	require.NoError(t, err)
+
+	share, err := ts.Service.CreateMemoShare(ownerCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+	shareToken := share.Name[strings.LastIndex(share.Name, "/")+1:]
+
+	expired := time.Now().Add(-time.Hour).Unix()
+	stored, err := ts.Store.GetMemoShare(ctx, &store.FindMemoShare{UID: &shareToken})
+	require.NoError(t, err)
+	require.NotNil(t, stored)
+	require.NoError(t, ts.Store.DeleteMemoShare(ctx, &store.DeleteMemoShare{UID: &shareToken}))
+	_, err = ts.Store.CreateMemoShare(ctx, &store.MemoShare{
+		UID:             shareToken,
+		MemoID:          stored.MemoID,
+		CreatorID:       stored.CreatorID,
+		ExpiresTs:       &expired,
+		AllowDownload:   true,
+		IncludeComments: true,
+	})
+	require.NoError(t, err)
+
+	_, err = ts.Service.ListSharedMemoComments(ctx, &apiv1.ListSharedMemoCommentsRequest{
+		ShareToken: shareToken,
+	})
+	require.Error(t, err)
+	require.Equal(t, codes.NotFound, status.Code(err))
+}

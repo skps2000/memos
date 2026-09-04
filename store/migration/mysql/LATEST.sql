@@ -105,6 +105,8 @@ CREATE TABLE `memo_share` (
   `creator_id` INT          NOT NULL,
   `created_ts` BIGINT       NOT NULL DEFAULT (UNIX_TIMESTAMP()),
   `expires_ts` BIGINT       DEFAULT NULL,
+  `allow_download`   BOOLEAN NOT NULL DEFAULT TRUE,
+  `include_comments` BOOLEAN NOT NULL DEFAULT TRUE,
   FOREIGN KEY (`memo_id`) REFERENCES `memo`(`id`) ON DELETE CASCADE
 );
 

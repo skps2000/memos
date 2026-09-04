@@ -11,6 +11,8 @@ export interface MemoDetailSidebarDescriptor {
   from?: string;
   readonly?: boolean;
   onShareImageOpen?: () => void;
+  /** Set when the memo was opened through a share link; exports go through the token. */
+  shareToken?: string;
 }
 
 interface AppSidebarContextValue {

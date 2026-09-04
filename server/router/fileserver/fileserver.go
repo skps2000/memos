@@ -118,6 +118,12 @@ func (s *FileServerService) RegisterRoutes(echoServer *echo.Echo) {
 	fileGroup.GET("/attachments/:uid", s.serveAttachmentFile)
 	fileGroup.GET("/attachments/:uid/:filename", s.serveAttachmentFile)
 	fileGroup.GET("/users/:identifier/avatar", s.serveUserAvatar)
+
+	// Exports are downloads rather than API reads: they stream an archive and are
+	// fetched by the browser directly, so they live beside the file routes.
+	exportGroup := echoServer.Group("/export")
+	exportGroup.GET("/memos/:uid", s.exportMemo)
+	exportGroup.GET("/shares/:token", s.exportSharedMemo)
 }
 
 // =============================================================================

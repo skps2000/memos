@@ -133,6 +133,12 @@ service MemoService {
   rpc GetSharedMemo(GetSharedMemoRequest) returns (Memo) {
     option (google.api.http) = {get: "/api/v1/shares/{share_token}/memo"};
   }
+  // ListSharedMemoComments lists the comments of a shared memo. No authentication required.
+  // Returns NOT_FOUND if the token is invalid or expired, and an empty list if the
+  // share was created with comments hidden.
+  rpc ListSharedMemoComments(ListSharedMemoCommentsRequest) returns (ListSharedMemoCommentsResponse) {
+    option (google.api.http) = {get: "/api/v1/shares/{share_token}/comments"};
+  }
   // GetLinkMetadata gets metadata for a link.
   rpc GetLinkMetadata(GetLinkMetadataRequest) returns (LinkMetadata) {
     option (google.api.http) = {get: "/api/v1/memos/-/linkMetadata"};
@@ -586,6 +592,14 @@ message MemoShare {
   // Optional. When set, the share link stops working after this time.
   // If unset, the link never expires.
   optional google.protobuf.Timestamp expire_time = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Whether the link holder may download the memo as an export bundle.
+  // Unset on create means enabled.
+  optional bool allow_download = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Whether the memo's comments are visible to the link holder.
+  // Unset on create means enabled.
+  optional bool include_comments = 5 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message CreateMemoShareRequest {
@@ -626,6 +640,16 @@ message DeleteMemoShareRequest {
 message GetSharedMemoRequest {
   // Required. The opaque bearer token extracted from the share URL.
   string share_token = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListSharedMemoCommentsRequest {
+  // Required. The opaque bearer token extracted from the share URL.
+  string share_token = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListSharedMemoCommentsResponse {
+  // The comments of the shared memo, oldest first.
+  repeated Memo memos = 1;
 }
 
 message GetLinkMetadataRequest {

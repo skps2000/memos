@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useInstance } from "@/contexts/InstanceContext";
 import useMemoDetailError from "@/hooks/useMemoDetailError";
 import { useInfiniteMemoComments, useMemo } from "@/hooks/useMemoQueries";
-import { useSharedMemo, withShareAttachmentLinks } from "@/hooks/useMemoShareQueries";
+import { useSharedMemo, useSharedMemoComments, withShareAttachmentLinks } from "@/hooks/useMemoShareQueries";
 import { memoNamePrefix } from "@/lib/resource-names";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Memo } from "@/types/proto/api/v1/memo_service_pb";
@@ -21,17 +21,19 @@ const MemoSidebarRegistration = ({
   from,
   readonly,
   onShareImageOpen,
+  shareToken,
 }: {
   memo: Memo;
   from?: string;
   readonly: boolean;
   onShareImageOpen: () => void;
+  shareToken?: string;
 }) => {
   const { setMemoDetail } = useAppSidebar();
 
   useEffect(() => {
-    setMemoDetail({ memo, from, readonly, onShareImageOpen });
-  }, [from, memo, onShareImageOpen, readonly, setMemoDetail]);
+    setMemoDetail({ memo, from, readonly, onShareImageOpen, shareToken });
+  }, [from, memo, onShareImageOpen, readonly, setMemoDetail, shareToken]);
 
   useEffect(() => () => setMemoDetail(undefined), [setMemoDetail]);
 
@@ -88,6 +90,10 @@ const MemoDetail = () => {
     enabled: !isShareMode && !!memo,
   });
 
+  // A share link carries its own comment feed: whether comments come along at all
+  // is decided by the link, not by who is looking at it.
+  const { data: sharedComments = [] } = useSharedMemoComments(shareToken ?? "", { enabled: isShareMode && !!memo });
+
   // Scroll to the hash target once it's in the DOM. The effect re-runs as the memo loads (footnote
   // anchors) and as comments arrive (comment anchors), since the target may render in either; the
   // ref guards against re-scrolling the same hash on every later comments page-load.
@@ -121,7 +127,13 @@ const MemoDetail = () => {
   return (
     <section className="@container flex min-h-full w-full flex-col items-center pb-8 pt-3 md:pt-6">
       <MentionResolutionProvider contents={mentionResolutionContents} userNames={userResolutionNames}>
-        <MemoSidebarRegistration memo={displayMemo} from={parentPage} readonly={isShareMode} onShareImageOpen={handleShareImageOpen} />
+        <MemoSidebarRegistration
+          memo={displayMemo}
+          from={parentPage}
+          readonly={isShareMode}
+          onShareImageOpen={handleShareImageOpen}
+          shareToken={shareToken}
+        />
         <div className="w-full max-w-2xl px-4 sm:px-6">
           <div className="w-full">
             {!isShareMode && parentMemo && (
@@ -148,7 +160,9 @@ const MemoDetail = () => {
               showPinned
               onShareImageDialogOpenChange={setShareImageDialogOpen}
             />
-            {!isShareMode && (
+            {isShareMode ? (
+              sharedComments.length > 0 && <MemoCommentSection memo={displayMemo} comments={sharedComments} readonly />
+            ) : (
               <MemoCommentSection
                 memo={displayMemo}
                 comments={comments}

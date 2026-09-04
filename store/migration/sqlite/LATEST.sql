@@ -106,6 +106,8 @@ CREATE TABLE memo_share (
   creator_id INTEGER NOT NULL,
   created_ts BIGINT  NOT NULL DEFAULT (strftime('%s', 'now')),
   expires_ts BIGINT  DEFAULT NULL,
+  allow_download   INTEGER NOT NULL CHECK (allow_download IN (0, 1)) DEFAULT 1,
+  include_comments INTEGER NOT NULL CHECK (include_comments IN (0, 1)) DEFAULT 1,
   FOREIGN KEY (memo_id) REFERENCES memo(id) ON DELETE CASCADE
 );
 

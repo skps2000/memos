@@ -1,5 +1,16 @@
 import copy from "copy-to-clipboard";
-import { BookmarkCheckIcon, BookmarkIcon, ChevronDownIcon, ImageIcon, LinkIcon, Share2Icon } from "lucide-react";
+import {
+  BookmarkCheckIcon,
+  BookmarkIcon,
+  ChevronDownIcon,
+  DownloadIcon,
+  FileArchiveIcon,
+  FileTextIcon,
+  ImageIcon,
+  LinkIcon,
+  Loader2Icon,
+  Share2Icon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
@@ -8,10 +19,17 @@ import SidebarSection, { SIDEBAR_SECTION_STACK_CLASSES } from "@/components/AppS
 import { extractHeadings } from "@/components/MemoContent/pipeline";
 import { getRelationBuckets, getRelationMemo } from "@/components/MemoMetadata/Relation/relationHelpers";
 import { useResolvedRelationMemos } from "@/components/MemoMetadata/Relation/useResolvedRelationMemos";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useInstance } from "@/contexts/InstanceContext";
 import { useOverflowTitle } from "@/hooks";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { MemoExportError, type MemoExportFormat, useMemoExport } from "@/hooks/useMemoExport";
 import { useUpdateMemo } from "@/hooks/useMemoQueries";
 import { cn } from "@/lib/utils";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -26,6 +44,8 @@ interface Props {
   className?: string;
   onShareImageOpen?: () => void;
   forceReadonly?: boolean;
+  /** Present when the memo was reached through a share link. */
+  shareToken?: string;
 }
 
 const BacklinkRow = ({ relation, snippet }: { relation: MemoRelation; snippet: string }) => {
@@ -50,12 +70,22 @@ const BacklinkRow = ({ relation, snippet }: { relation: MemoRelation; snippet: s
   );
 };
 
-const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = false }: Props) => {
+const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = false, shareToken }: Props) => {
   const t = useTranslate();
   const currentUser = useCurrentUser();
   const { profile } = useInstance();
   const { mutateAsync: updateMemo } = useUpdateMemo();
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const { exportMemo, pendingFormat, isExporting } = useMemoExport();
+
+  const handleExport = async (format: MemoExportFormat) => {
+    try {
+      await exportMemo(shareToken ? { kind: "share", shareToken } : { kind: "memo", memoName: memo.name }, format);
+    } catch (error) {
+      const reason = error instanceof MemoExportError ? error.reason : "failed";
+      toast.error(reason === "forbidden" ? t("memo.export.disabled-for-link") : t("memo.export.failed"));
+    }
+  };
 
   const readonly = forceReadonly || (memo.creator !== currentUser?.name && !isSuperUser(currentUser));
   const canPin = !readonly && !memo.parent && memo.state === State.NORMAL;
@@ -132,6 +162,19 @@ const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = 
                 {t("memo.share.open-panel")}
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={isExporting} onClick={() => handleExport("md")}>
+              {pendingFormat === "md" ? <Loader2Icon className="animate-spin" /> : <FileTextIcon />}
+              {t("memo.export.markdown")}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isExporting} onClick={() => handleExport("zip")}>
+              {pendingFormat === "zip" ? <Loader2Icon className="animate-spin" /> : <FileArchiveIcon />}
+              {t("memo.export.archive")}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isExporting} onClick={() => handleExport("json")}>
+              {pendingFormat === "json" ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
+              {t("memo.export.json")}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarSection>

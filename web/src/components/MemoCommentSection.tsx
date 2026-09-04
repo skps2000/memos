@@ -16,16 +16,26 @@ interface Props {
   hasMoreComments?: boolean;
   isFetchingMoreComments?: boolean;
   onLoadMoreComments?: () => void;
+  /** Renders the thread without a composer, for views that only grant reading. */
+  readonly?: boolean;
 }
 
-const MemoCommentSection = ({ memo, comments, parentPage, hasMoreComments, isFetchingMoreComments, onLoadMoreComments }: Props) => {
+const MemoCommentSection = ({
+  memo,
+  comments,
+  parentPage,
+  hasMoreComments,
+  isFetchingMoreComments,
+  onLoadMoreComments,
+  readonly = false,
+}: Props) => {
   const t = useTranslate();
   const currentUser = useCurrentUser();
   const [showEditor, setShowEditor] = useState(false);
   const [isEditorLoading, setIsEditorLoading] = useState(false);
   const [EditorComponent, setEditorComponent] = useState<ComponentType<MemoEditorProps>>();
 
-  const showCreateButton = currentUser && !showEditor;
+  const showCreateButton = !readonly && currentUser && !showEditor;
 
   const handleCommentCreated = async (_memoCommentName: string) => {
     setShowEditor(false);

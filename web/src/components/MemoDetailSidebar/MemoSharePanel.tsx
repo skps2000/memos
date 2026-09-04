@@ -1,11 +1,13 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { ConnectError } from "@connectrpc/connect";
-import { CheckIcon, CopyIcon, LinkIcon, Loader2Icon, Trash2Icon } from "lucide-react";
+import { CheckIcon, CopyIcon, DownloadIcon, LinkIcon, Loader2Icon, MessageCircleIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { getShareUrl, useCreateMemoShare, useDeleteMemoShare, useMemoShares } from "@/hooks/useMemoShareQueries";
 import type { MemoShare } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
@@ -73,7 +75,21 @@ function ShareLinkRow({ share, memoName }: ShareLinkRowProps) {
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{formatExpiry(share, t)}</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span>{formatExpiry(share, t)}</span>
+        {share.allowDownload && (
+          <span className="flex items-center gap-1">
+            <DownloadIcon className="h-3 w-3" />
+            {t("memo.share.grants-download")}
+          </span>
+        )}
+        {share.includeComments && (
+          <span className="flex items-center gap-1">
+            <MessageCircleIcon className="h-3 w-3" />
+            {t("memo.share.grants-comments")}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -87,6 +103,9 @@ interface MemoSharePanelProps {
 const MemoSharePanel = ({ open, onClose, memoName }: MemoSharePanelProps) => {
   const t = useTranslate();
   const [expiry, setExpiry] = useState<ExpiryOption>("never");
+  // Both options are on by default: a link is meant to stand in for the memo.
+  const [allowDownload, setAllowDownload] = useState(true);
+  const [includeComments, setIncludeComments] = useState(true);
   const { data: shares = [], isLoading } = useMemoShares(memoName, { enabled: open });
   const createShare = useCreateMemoShare();
 
@@ -102,7 +121,7 @@ const MemoSharePanel = ({ open, onClose, memoName }: MemoSharePanelProps) => {
 
   const handleCreate = async () => {
     try {
-      await createShare.mutateAsync({ memoName, expireTime: getExpireDate(expiry) });
+      await createShare.mutateAsync({ memoName, expireTime: getExpireDate(expiry), allowDownload, includeComments });
     } catch (e) {
       toast.error((e as ConnectError).message || t("memo.share.create-failed"));
     }
@@ -133,6 +152,24 @@ const MemoSharePanel = ({ open, onClose, memoName }: MemoSharePanelProps) => {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Options applied to the next link */}
+          <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="share-allow-download" className="flex flex-col gap-0.5 text-sm font-normal">
+                <span className="font-medium">{t("memo.share.allow-download")}</span>
+                <span className="text-xs text-muted-foreground">{t("memo.share.allow-download-description")}</span>
+              </Label>
+              <Switch id="share-allow-download" checked={allowDownload} onCheckedChange={setAllowDownload} />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="share-include-comments" className="flex flex-col gap-0.5 text-sm font-normal">
+                <span className="font-medium">{t("memo.share.include-comments")}</span>
+                <span className="text-xs text-muted-foreground">{t("memo.share.include-comments-description")}</span>
+              </Label>
+              <Switch id="share-include-comments" checked={includeComments} onCheckedChange={setIncludeComments} />
+            </div>
           </div>
 
           {/* Create new link */}

@@ -367,6 +367,7 @@ const MemoDetailSidebarContent = () => {
       memo={memoDetail.memo}
       forceReadonly={memoDetail.readonly}
       onShareImageOpen={memoDetail.onShareImageOpen}
+      shareToken={memoDetail.shareToken}
       className="pb-2"
     />
   );
