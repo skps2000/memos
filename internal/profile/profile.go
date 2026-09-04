@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -36,6 +37,19 @@ type Profile struct {
 	Commit string
 	// InstanceURL is the url of your memos instance.
 	InstanceURL string
+	// OrphanAttachmentRetentionDays is how many days an attachment that is bound to
+	// no memo is kept before the cleanup job deletes it and reclaims its storage.
+	// Zero disables the cleanup.
+	OrphanAttachmentRetentionDays int
+}
+
+// OrphanAttachmentRetention returns the configured retention as a duration.
+// A zero duration means abandoned attachments are never swept.
+func (p *Profile) OrphanAttachmentRetention() time.Duration {
+	if p.OrphanAttachmentRetentionDays <= 0 {
+		return 0
+	}
+	return time.Duration(p.OrphanAttachmentRetentionDays) * 24 * time.Hour
 }
 
 // AllowAnonymous reports whether unauthenticated visitors may access the instance.

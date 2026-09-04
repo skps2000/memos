@@ -69,6 +69,12 @@ func (d *DB) ListAttachments(ctx context.Context, find *store.FindAttachment) ([
 	if find.HasRelatedMemo {
 		where = append(where, "attachment.memo_id IS NOT NULL")
 	}
+	if find.HasNoRelatedMemo {
+		where = append(where, "attachment.memo_id IS NULL")
+	}
+	if v := find.CreatedTsBefore; v != nil {
+		where, args = append(where, "attachment.created_ts < "+placeholder(len(args)+1)), append(args, *v)
+	}
 	if len(find.Filters) > 0 {
 		engine, err := filter.DefaultAttachmentEngine()
 		if err != nil {

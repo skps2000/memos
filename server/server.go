@@ -15,12 +15,14 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/usememos/memos/internal/profile"
+	"github.com/usememos/memos/internal/scheduler"
 	storepb "github.com/usememos/memos/proto/gen/store"
 	apiv1 "github.com/usememos/memos/server/router/api/v1"
 	"github.com/usememos/memos/server/router/fileserver"
 	"github.com/usememos/memos/server/router/frontend"
 	"github.com/usememos/memos/server/router/mcp"
 	"github.com/usememos/memos/server/router/rss"
+	"github.com/usememos/memos/server/runner/attachmentcleanup"
 	"github.com/usememos/memos/store"
 )
 
@@ -34,6 +36,7 @@ type Server struct {
 	echoServer *echo.Echo
 	httpServer *http.Server
 	sseHub     *apiv1.SSEHub
+	scheduler  *scheduler.Scheduler
 }
 
 func NewServer(ctx context.Context, profile *profile.Profile, store *store.Store) (*Server, error) {
@@ -90,7 +93,42 @@ func NewServer(ctx context.Context, profile *profile.Profile, store *store.Store
 	}
 	mcpService.RegisterRoutes(echoServer)
 
+	if err := s.registerScheduledJobs(); err != nil {
+		return nil, errors.Wrap(err, "failed to register scheduled jobs")
+	}
+
 	return s, nil
+}
+
+// registerScheduledJobs sets up the background jobs that keep an instance tidy.
+// The scheduler is only built when at least one job is enabled, so a server with
+// everything turned off starts no goroutines for it.
+func (s *Server) registerScheduledJobs() error {
+	cleanupRunner := attachmentcleanup.NewRunner(s.Store, s.Profile.OrphanAttachmentRetention())
+	if !cleanupRunner.Enabled() {
+		return nil
+	}
+
+	jobScheduler := scheduler.New(scheduler.WithMiddleware(
+		scheduler.Recovery(func(jobName string, recovered any) {
+			slog.Error("scheduled job panicked", slog.String("job", jobName), slog.Any("recovered", recovered))
+		}),
+		scheduler.Logging(slog.Default()),
+	))
+	if err := jobScheduler.Register(&scheduler.Job{
+		Name:        attachmentcleanup.JobName,
+		Schedule:    attachmentcleanup.Schedule,
+		Description: "delete attachments that were never attached to a memo, storage included",
+		Handler: func(ctx context.Context) error {
+			_, err := cleanupRunner.RunOnce(ctx)
+			return err
+		},
+	}); err != nil {
+		return errors.Wrap(err, "failed to register the orphan attachment cleanup job")
+	}
+
+	s.scheduler = jobScheduler
+	return nil
 }
 
 func (s *Server) Start() error {
@@ -114,6 +152,13 @@ func (s *Server) Start() error {
 		}
 	}
 
+	if s.scheduler != nil {
+		if err := s.scheduler.Start(); err != nil {
+			_ = listener.Close()
+			return errors.Wrap(err, "failed to start scheduler")
+		}
+	}
+
 	// Start Echo server directly (no cmux needed - all traffic is HTTP).
 	s.httpServer = &http.Server{Handler: s.echoServer}
 	go func() {
@@ -133,6 +178,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 
 	s.closeLongLivedConnections()
 	s.shutdownHTTPServer(ctx)
+	s.stopScheduler(ctx)
 
 	// Close database connection.
 	if err := s.Store.Close(); err != nil {
@@ -146,6 +192,15 @@ func (s *Server) closeLongLivedConnections() {
 	// Long-lived SSE requests do not finish on their own during http.Server.Shutdown.
 	if s.sseHub != nil {
 		s.sseHub.Close()
+	}
+}
+
+func (s *Server) stopScheduler(ctx context.Context) {
+	if s.scheduler == nil {
+		return
+	}
+	if err := s.scheduler.Stop(ctx); err != nil {
+		slog.Error("failed to stop scheduler", slog.String("error", err.Error()))
 	}
 }
 

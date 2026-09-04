@@ -183,6 +183,14 @@ func (s *APIV1Service) CreateAttachment(ctx context.Context, request *v1pb.Creat
 
 	attachment, err := s.Store.CreateAttachment(ctx, create)
 	if err != nil {
+		// The blob is already in storage at this point, so drop it before returning.
+		// Otherwise a failed insert leaves a file that no row references and that
+		// nothing will ever delete, and the space is lost for good.
+		if cleanupErr := s.Store.DeleteAttachmentStorage(ctx, create); cleanupErr != nil {
+			slog.Warn("failed to clean up attachment storage after a failed create",
+				slog.String("uid", create.UID),
+				slog.Any("err", cleanupErr))
+		}
 		return nil, status.Errorf(codes.Internal, "failed to create attachment: %v", err)
 	}
 

@@ -44,6 +44,8 @@ var (
 				DSN:             viper.GetString("dsn"),
 				LibSQLAuthToken: viper.GetString("libsql-auth-token"),
 				InstanceURL:     viper.GetString("instance-url"),
+
+				OrphanAttachmentRetentionDays: viper.GetInt("orphan-attachment-retention-days"),
 			}
 			instanceProfile.Version = version.GetCurrentVersion()
 			instanceProfile.Commit = version.Commit
@@ -122,6 +124,7 @@ func init() {
 	viper.SetDefault("demo", false)
 	viper.SetDefault("driver", "sqlite")
 	viper.SetDefault("port", 8081)
+	viper.SetDefault("orphan-attachment-retention-days", 30)
 
 	rootCmd.PersistentFlags().Bool("demo", false, "enable demo mode")
 	rootCmd.PersistentFlags().String("addr", "", "address of server")
@@ -134,6 +137,8 @@ func init() {
 	rootCmd.PersistentFlags().String("instance-url", "", "the url of your memos instance")
 	rootCmd.PersistentFlags().Bool("allow-private-webhooks", false, "allow webhook URLs to resolve to private/reserved IP addresses")
 	rootCmd.PersistentFlags().String("log-level", "info", "log verbosity level (debug, info, warn, error)")
+	rootCmd.PersistentFlags().Int("orphan-attachment-retention-days", 30,
+		"delete attachments that were never attached to a memo after this many days, 0 to keep them forever")
 
 	if err := viper.BindPFlag("demo", rootCmd.PersistentFlags().Lookup("demo")); err != nil {
 		panic(err)
@@ -166,6 +171,10 @@ func init() {
 		panic(err)
 	}
 	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
+		panic(err)
+	}
+	if err := viper.BindPFlag("orphan-attachment-retention-days",
+		rootCmd.PersistentFlags().Lookup("orphan-attachment-retention-days")); err != nil {
 		panic(err)
 	}
 

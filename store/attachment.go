@@ -50,6 +50,8 @@ type FindAttachment struct {
 	MemoID           *int32
 	MemoIDList       []int32
 	HasRelatedMemo   bool
+	HasNoRelatedMemo bool
+	CreatedTsBefore  *int64
 	Filters          []string
 	Limit            *int
 	Offset           *int

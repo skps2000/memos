@@ -667,3 +667,55 @@ func TestDeleteMotionMediaGroupChecksBeyondDefaultAttachmentPage(t *testing.T) {
 	_, err = ts.Service.DeleteAttachment(userCtx, &v1pb.DeleteAttachmentRequest{Name: "attachments/" + video.UID})
 	require.Equal(t, codes.FailedPrecondition, status.Code(err))
 }
+
+func TestCreateAttachmentCleansUpStorageWhenInsertFails(t *testing.T) {
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+	ctx := context.Background()
+	user, err := ts.CreateRegularUser(ctx, "create_rollback_user")
+	require.NoError(t, err)
+	userCtx := ts.CreateUserContext(ctx, user.ID)
+
+	attachmentID := shortuuid.New()
+	created, err := ts.Service.CreateAttachment(userCtx, &v1pb.CreateAttachmentRequest{
+		AttachmentId: attachmentID,
+		Attachment: &v1pb.Attachment{
+			Filename: "rollback.txt",
+			Type:     "text/plain",
+			Content:  []byte("rollback"),
+		},
+	})
+	require.NoError(t, err)
+
+	assetsDir := filepath.Join(ts.Profile.Data, "assets")
+	before, err := os.ReadDir(assetsDir)
+	require.NoError(t, err)
+	require.Len(t, before, 1)
+
+	// Reusing the same attachment ID fails the insert on the UID unique index,
+	// after the blob has already been written to storage.
+	_, err = ts.Service.CreateAttachment(userCtx, &v1pb.CreateAttachmentRequest{
+		AttachmentId: attachmentID,
+		Attachment: &v1pb.Attachment{
+			Filename: "rollback.txt",
+			Type:     "text/plain",
+			Content:  []byte("rollback again"),
+		},
+	})
+	require.Error(t, err)
+
+	after, err := os.ReadDir(assetsDir)
+	require.NoError(t, err)
+	require.Len(t, after, 1, "the failed upload must not leave a file behind")
+
+	uid, err := apiv1.ExtractAttachmentUIDFromName(created.Name)
+	require.NoError(t, err)
+	stored, err := ts.Store.GetAttachment(ctx, &store.FindAttachment{UID: &uid})
+	require.NoError(t, err)
+	require.NotNil(t, stored)
+	storedPath := filepath.FromSlash(stored.Reference)
+	if !filepath.IsAbs(storedPath) {
+		storedPath = filepath.Join(ts.Profile.Data, storedPath)
+	}
+	require.FileExists(t, storedPath, "the existing attachment must survive the failed upload")
+}
