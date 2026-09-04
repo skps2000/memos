@@ -1,13 +1,18 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { QueryClient } from "@tanstack/react-query";
 
-// Don't retry requests that failed due to authentication errors.
-// The auth interceptor in connect.ts already handles token refresh and request retry.
-// If the interceptor still throws Unauthenticated, the session is truly gone and the
-// user will be redirected to /auth. A React Query retry would only fire a second
-// failed refresh attempt and a second redirect call while navigation is already in progress.
-const shouldRetry = (failureCount: number, error: unknown): boolean => {
-  if (error instanceof ConnectError && error.code === Code.Unauthenticated) return false;
+// Codes the server has already decided on. Asking again cannot change the answer, and
+// the wait costs the user: a memo detail page shows nothing at all until its query
+// settles, so a retried NOT_FOUND doubles the blank time before the 404 page appears.
+//
+// Unauthenticated is here for a different reason: the auth interceptor in connect.ts
+// already handles token refresh and request retry. If it still throws Unauthenticated,
+// the session is truly gone and the caller is being redirected to /auth. A React Query
+// retry would only fire a second failed refresh and a second redirect mid-navigation.
+const TERMINAL_CODES = new Set<Code>([Code.Unauthenticated, Code.PermissionDenied, Code.NotFound]);
+
+export const shouldRetry = (failureCount: number, error: unknown): boolean => {
+  if (error instanceof ConnectError && TERMINAL_CODES.has(error.code)) return false;
   return failureCount < 1;
 };
 
