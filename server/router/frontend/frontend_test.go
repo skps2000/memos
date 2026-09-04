@@ -231,3 +231,23 @@ func TestFrontendService_SitemapRoutesRequireInstanceURL(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, rec.Code)
 	}
 }
+
+func TestFrontendService_ExportRouteKeepsNotFound(t *testing.T) {
+	ctx := context.Background()
+	testStore := teststore.NewTestingStore(ctx, t)
+
+	e := echo.New()
+	NewFrontendService(&profile.Profile{}, testStore).Serve(ctx, e)
+	// The export routes are registered by the file server. A miss there has to reach
+	// the caller as a 404: the SPA fallback would answer 200 with the app shell, and
+	// the browser would save that HTML as the exported memo.
+	e.GET("/export/memos/:uid", func(c *echo.Context) error {
+		return echo.NewHTTPError(http.StatusNotFound, "memo not found")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/export/memos/missing", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusNotFound, rec.Code)
+}
