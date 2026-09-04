@@ -11,10 +11,12 @@ import {
   ListChecksIcon,
   ListRestartIcon,
   MoreVerticalIcon,
+  Share2Icon,
   TrashIcon,
 } from "lucide-react";
 import { useState } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import MemoSharePanel from "@/components/MemoSharePanel";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,8 +28,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCopyMemoLink } from "@/hooks/useCopyMemoLink";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { useTranslate } from "@/utils/i18n";
+import { isSuperUser } from "@/utils/user";
 import { useMemoActionHandlers } from "./hooks";
 import type { MemoActionMenuProps } from "./types";
 
@@ -40,12 +44,17 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   // A menu is rendered per memo in a list, so the memo's share links are only
   // looked up while this one is open.
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const handleCopyLink = useCopyMemoLink(memo, { enabled: menuOpen });
+  const currentUser = useCurrentUser();
 
   // Derived state
   const isComment = Boolean(memo.parent);
   const isArchived = memo.state === State.ARCHIVED;
   const canMutateTasks = !readonly && !isArchived && Boolean(memo.property?.hasTaskList);
+  // A share link stands in for the memo itself, so comments cannot have one and the
+  // server refuses to share anything but an active memo.
+  const canManageShares = !isComment && !isArchived && (memo.creator === currentUser?.name || isSuperUser(currentUser));
   const hasOpenTasks = Boolean(memo.property?.hasIncompleteTasks);
 
   // Action handlers
@@ -106,6 +115,14 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
           </DropdownMenuSub>
         )}
 
+        {/* Share links */}
+        {canManageShares && (
+          <DropdownMenuItem onClick={() => setSharePanelOpen(true)}>
+            <Share2Icon className="w-4 h-auto" />
+            {t("memo.share.open-panel")}
+          </DropdownMenuItem>
+        )}
+
         {/* Task submenu (writable task memos) */}
         {canMutateTasks && (
           <DropdownMenuSub>
@@ -157,6 +174,8 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
         onConfirm={confirmDeleteMemo}
         confirmVariant="destructive"
       />
+
+      {sharePanelOpen && <MemoSharePanel memoName={memo.name} open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} />}
     </DropdownMenu>
   );
 };

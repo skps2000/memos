@@ -32,7 +32,7 @@ vi.mock("@/hooks/useMemoShareQueries", async (importOriginal) => ({
 vi.mock("@/components/MemoDetailSidebar/MemoOutline", () => ({
   default: ({ headings }: { headings: unknown[] }) => <div data-testid="outline">{headings.length}</div>,
 }));
-vi.mock("@/components/MemoDetailSidebar/MemoSharePanel", () => ({ default: () => <div data-testid="share-panel" /> }));
+vi.mock("@/components/MemoSharePanel", () => ({ default: () => <div data-testid="share-panel" /> }));
 vi.mock("@/components/MemoMetadata/Relation/useResolvedRelationMemos", () => ({ useResolvedRelationMemos: () => ({}) }));
 vi.mock("@/contexts/InstanceContext", () => ({ useInstance: () => ({ profile: { instanceUrl: "https://memos.example" } }) }));
 vi.mock("@/hooks/useCurrentUser", () => ({ default: () => ({ name: "users/alice" }) }));

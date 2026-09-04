@@ -18,6 +18,7 @@ import SidebarSection, { SIDEBAR_SECTION_STACK_CLASSES } from "@/components/AppS
 import { extractHeadings } from "@/components/MemoContent/pipeline";
 import { getRelationBuckets, getRelationMemo } from "@/components/MemoMetadata/Relation/relationHelpers";
 import { useResolvedRelationMemos } from "@/components/MemoMetadata/Relation/useResolvedRelationMemos";
+import MemoSharePanel from "@/components/MemoSharePanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +37,6 @@ import { Memo, type MemoRelation } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { isSuperUser } from "@/utils/user";
 import MemoOutline from "./MemoOutline";
-import MemoSharePanel from "./MemoSharePanel";
 
 interface Props {
   memo: Memo;
@@ -87,7 +87,8 @@ const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = 
 
   const readonly = forceReadonly || (memo.creator !== currentUser?.name && !isSuperUser(currentUser));
   const canPin = !readonly && !memo.parent && memo.state === State.NORMAL;
-  const canManageShares = !forceReadonly && !memo.parent && (memo.creator === currentUser?.name || isSuperUser(currentUser));
+  const canManageShares =
+    !forceReadonly && !memo.parent && memo.state === State.NORMAL && (memo.creator === currentUser?.name || isSuperUser(currentUser));
 
   const headings = useMemo(() => extractHeadings(memo.content), [memo.content]);
   const { referenced } = useMemo(() => getRelationBuckets(memo.relations, memo.name), [memo.relations, memo.name]);
