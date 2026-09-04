@@ -110,7 +110,7 @@ const MemoHeader: React.FC<MemoHeaderProps> = ({ showCreator, showVisibility, sh
         )}
 
         {!isArchived && <MemoCopyButton content={memo.content} />}
-        {!isArchived && <MemoTelegramButton content={memo.content} />}
+        {!isArchived && <MemoTelegramButton content={memo.content} attachments={memo.attachments} />}
 
         <MemoActionMenu memo={memo} readonly={readonly} onEdit={openEditor} />
       </div>
