@@ -431,6 +431,14 @@ func (s *ConnectServiceHandler) ListMemoShares(ctx context.Context, req *connect
 	return connect.NewResponse(resp), nil
 }
 
+func (s *ConnectServiceHandler) UpdateMemoShare(ctx context.Context, req *connect.Request[v1pb.UpdateMemoShareRequest]) (*connect.Response[v1pb.MemoShare], error) {
+	resp, err := s.APIV1Service.UpdateMemoShare(ctx, req.Msg)
+	if err != nil {
+		return nil, convertGRPCError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (s *ConnectServiceHandler) DeleteMemoShare(ctx context.Context, req *connect.Request[v1pb.DeleteMemoShareRequest]) (*connect.Response[emptypb.Empty], error) {
 	resp, err := s.APIV1Service.DeleteMemoShare(ctx, req.Msg)
 	if err != nil {

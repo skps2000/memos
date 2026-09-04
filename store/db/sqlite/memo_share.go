@@ -55,7 +55,9 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			created_ts,
 			expires_ts,
 			allow_download,
-			include_comments
+			include_comments,
+			view_count,
+			last_accessed_ts
 		FROM memo_share
 		WHERE `+strings.Join(where, " AND ")+`
 		ORDER BY id ASC`,
@@ -78,6 +80,8 @@ func (d *DB) ListMemoShares(ctx context.Context, find *store.FindMemoShare) ([]*
 			&ms.ExpiresTs,
 			&ms.AllowDownload,
 			&ms.IncludeComments,
+			&ms.ViewCount,
+			&ms.LastAccessedTs,
 		); err != nil {
 			return nil, err
 		}
@@ -116,7 +120,9 @@ func (d *DB) GetMemoShare(ctx context.Context, find *store.FindMemoShare) (*stor
 			created_ts,
 			expires_ts,
 			allow_download,
-			include_comments
+			include_comments,
+			view_count,
+			last_accessed_ts
 		FROM memo_share
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT 1`,
@@ -130,6 +136,8 @@ func (d *DB) GetMemoShare(ctx context.Context, find *store.FindMemoShare) (*stor
 		&ms.ExpiresTs,
 		&ms.AllowDownload,
 		&ms.IncludeComments,
+		&ms.ViewCount,
+		&ms.LastAccessedTs,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -137,6 +145,34 @@ func (d *DB) GetMemoShare(ctx context.Context, find *store.FindMemoShare) (*stor
 		return nil, err
 	}
 	return ms, nil
+}
+
+func (d *DB) UpdateMemoShare(ctx context.Context, update *store.UpdateMemoShare) error {
+	set, args := []string{}, []any{}
+	if update.ClearExpiresTs {
+		set = append(set, "`expires_ts` = NULL")
+	} else if v := update.ExpiresTs; v != nil {
+		set, args = append(set, "`expires_ts` = ?"), append(args, *v)
+	}
+	if v := update.AllowDownload; v != nil {
+		set, args = append(set, "`allow_download` = ?"), append(args, *v)
+	}
+	if v := update.IncludeComments; v != nil {
+		set, args = append(set, "`include_comments` = ?"), append(args, *v)
+	}
+	if len(set) == 0 {
+		return nil
+	}
+	args = append(args, update.UID)
+	_, err := d.db.ExecContext(ctx, "UPDATE `memo_share` SET "+strings.Join(set, ", ")+" WHERE `uid` = ?", args...)
+	return err
+}
+
+func (d *DB) RecordMemoShareAccess(ctx context.Context, uid string, accessedTs int64) error {
+	_, err := d.db.ExecContext(ctx,
+		"UPDATE `memo_share` SET `view_count` = `view_count` + 1, `last_accessed_ts` = ? WHERE `uid` = ?",
+		accessedTs, uid)
+	return err
 }
 
 func (d *DB) DeleteMemoShare(ctx context.Context, delete *store.DeleteMemoShare) error {

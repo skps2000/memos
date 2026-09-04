@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -125,6 +126,99 @@ func (s *APIV1Service) ListMemoShares(ctx context.Context, request *v1pb.ListMem
 	return response, nil
 }
 
+// UpdateMemoShare changes what an existing share link permits.
+// Only the memo's creator or an admin may call this.
+func (s *APIV1Service) UpdateMemoShare(ctx context.Context, request *v1pb.UpdateMemoShareRequest) (*v1pb.MemoShare, error) {
+	if request.MemoShare == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "memo_share is required")
+	}
+	if request.UpdateMask == nil || len(request.UpdateMask.Paths) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "update_mask is required")
+	}
+
+	memo, ms, err := s.resolveOwnedMemoShare(ctx, request.MemoShare.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	update := &store.UpdateMemoShare{UID: ms.UID}
+	for _, path := range request.UpdateMask.Paths {
+		switch path {
+		case "expire_time":
+			if request.MemoShare.ExpireTime == nil {
+				update.ClearExpiresTs = true
+				continue
+			}
+			ts := request.MemoShare.ExpireTime.AsTime().Unix()
+			if ts <= time.Now().Unix() {
+				return nil, status.Errorf(codes.InvalidArgument, "expire_time must be in the future")
+			}
+			update.ExpiresTs = &ts
+		case "allow_download":
+			allow := request.MemoShare.GetAllowDownload()
+			update.AllowDownload = &allow
+		case "include_comments":
+			include := request.MemoShare.GetIncludeComments()
+			update.IncludeComments = &include
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unsupported update path: %s", path)
+		}
+	}
+
+	if err := s.Store.UpdateMemoShare(ctx, update); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update memo share")
+	}
+
+	updated, err := s.Store.GetMemoShare(ctx, &store.FindMemoShare{UID: &ms.UID})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get memo share")
+	}
+	if updated == nil {
+		return nil, status.Errorf(codes.NotFound, "memo share not found")
+	}
+	return convertMemoShareFromStore(updated, memo.UID), nil
+}
+
+// resolveOwnedMemoShare resolves a share resource name for a caller that must own
+// the memo it belongs to. The share is verified to belong to that exact memo, so a
+// token cannot be addressed through someone else's memo name.
+func (s *APIV1Service) resolveOwnedMemoShare(ctx context.Context, name string) (*store.Memo, *store.MemoShare, error) {
+	user, err := s.fetchCurrentUser(ctx)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "failed to get user")
+	}
+	if user == nil {
+		return nil, nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// name format: memos/{memoUID}/shares/{shareToken}
+	tokens, err := GetNameParentTokens(name, MemoNamePrefix, MemoShareNamePrefix)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.InvalidArgument, "invalid share name: %v", err)
+	}
+	memoUID, shareToken := tokens[0], tokens[1]
+
+	memo, err := s.Store.GetMemo(ctx, &store.FindMemo{UID: &memoUID})
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "failed to get memo")
+	}
+	if memo == nil {
+		return nil, nil, status.Errorf(codes.NotFound, "memo not found")
+	}
+	if memo.CreatorID != user.ID && !isSuperUser(user) {
+		return nil, nil, status.Errorf(codes.PermissionDenied, "permission denied")
+	}
+
+	ms, err := s.Store.GetMemoShare(ctx, &store.FindMemoShare{UID: &shareToken})
+	if err != nil {
+		return nil, nil, status.Errorf(codes.Internal, "failed to get memo share")
+	}
+	if ms == nil || ms.MemoID != memo.ID {
+		return nil, nil, status.Errorf(codes.NotFound, "memo share not found")
+	}
+	return memo, ms, nil
+}
+
 // DeleteMemoShare revokes a share link.
 // Only the memo's creator or an admin may call this.
 func (s *APIV1Service) DeleteMemoShare(ctx context.Context, request *v1pb.DeleteMemoShareRequest) (*emptypb.Empty, error) {
@@ -171,10 +265,11 @@ func (s *APIV1Service) DeleteMemoShare(ctx context.Context, request *v1pb.Delete
 // GetSharedMemo resolves a share token to its memo. No authentication required.
 // Returns NOT_FOUND for invalid or expired tokens (no information leakage).
 func (s *APIV1Service) GetSharedMemo(ctx context.Context, request *v1pb.GetSharedMemoRequest) (*v1pb.Memo, error) {
-	_, memo, err := s.resolveSharedMemo(ctx, request.ShareToken)
+	ms, memo, err := s.resolveSharedMemo(ctx, request.ShareToken)
 	if err != nil {
 		return nil, err
 	}
+	s.recordMemoShareAccess(ctx, ms)
 
 	reactions, err := s.Store.ListReactions(ctx, &store.FindReaction{
 		ContentID: stringPointer(fmt.Sprintf("%s%s", MemoNamePrefix, memo.UID)),
@@ -254,6 +349,14 @@ func (s *APIV1Service) resolveSharedMemo(ctx context.Context, shareToken string)
 	return ms, memo, nil
 }
 
+// recordMemoShareAccess counts one use of a link. Bookkeeping must never fail the
+// read it is attached to, so an error is logged and swallowed.
+func (s *APIV1Service) recordMemoShareAccess(ctx context.Context, ms *store.MemoShare) {
+	if err := s.Store.RecordMemoShareAccess(ctx, ms.UID, time.Now().Unix()); err != nil {
+		slog.Warn("failed to record memo share access", slog.String("share_uid", ms.UID), slog.Any("err", err))
+	}
+}
+
 // isMemoShareExpired returns true if the share has a defined expiry that has already passed.
 func isMemoShareExpired(ms *store.MemoShare) bool {
 	return ms.ExpiresTs != nil && time.Now().Unix() > *ms.ExpiresTs
@@ -283,9 +386,13 @@ func convertMemoShareFromStore(ms *store.MemoShare, memoUID string) *v1pb.MemoSh
 		CreateTime:      timestamppb.New(time.Unix(ms.CreatedTs, 0)),
 		AllowDownload:   &ms.AllowDownload,
 		IncludeComments: &ms.IncludeComments,
+		ViewCount:       ms.ViewCount,
 	}
 	if ms.ExpiresTs != nil {
 		pb.ExpireTime = timestamppb.New(time.Unix(*ms.ExpiresTs, 0))
+	}
+	if ms.LastAccessedTs != nil {
+		pb.LastViewTime = timestamppb.New(time.Unix(*ms.LastAccessedTs, 0))
 	}
 	return pb
 }

@@ -77,6 +77,9 @@ const (
 	// MemoServiceListMemoSharesProcedure is the fully-qualified name of the MemoService's
 	// ListMemoShares RPC.
 	MemoServiceListMemoSharesProcedure = "/memos.api.v1.MemoService/ListMemoShares"
+	// MemoServiceUpdateMemoShareProcedure is the fully-qualified name of the MemoService's
+	// UpdateMemoShare RPC.
+	MemoServiceUpdateMemoShareProcedure = "/memos.api.v1.MemoService/UpdateMemoShare"
 	// MemoServiceDeleteMemoShareProcedure is the fully-qualified name of the MemoService's
 	// DeleteMemoShare RPC.
 	MemoServiceDeleteMemoShareProcedure = "/memos.api.v1.MemoService/DeleteMemoShare"
@@ -135,6 +138,9 @@ type MemoServiceClient interface {
 	CreateMemoShare(context.Context, *connect.Request[v1.CreateMemoShareRequest]) (*connect.Response[v1.MemoShare], error)
 	// ListMemoShares lists all share links for a memo. Requires authentication as the memo creator.
 	ListMemoShares(context.Context, *connect.Request[v1.ListMemoSharesRequest]) (*connect.Response[v1.ListMemoSharesResponse], error)
+	// UpdateMemoShare changes what an existing share link permits.
+	// Requires authentication as the memo creator.
+	UpdateMemoShare(context.Context, *connect.Request[v1.UpdateMemoShareRequest]) (*connect.Response[v1.MemoShare], error)
 	// DeleteMemoShare revokes a share link. Requires authentication as the memo creator.
 	DeleteMemoShare(context.Context, *connect.Request[v1.DeleteMemoShareRequest]) (*connect.Response[emptypb.Empty], error)
 	// GetSharedMemo resolves a share token to its memo. No authentication required.
@@ -257,6 +263,12 @@ func NewMemoServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(memoServiceMethods.ByName("ListMemoShares")),
 			connect.WithClientOptions(opts...),
 		),
+		updateMemoShare: connect.NewClient[v1.UpdateMemoShareRequest, v1.MemoShare](
+			httpClient,
+			baseURL+MemoServiceUpdateMemoShareProcedure,
+			connect.WithSchema(memoServiceMethods.ByName("UpdateMemoShare")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteMemoShare: connect.NewClient[v1.DeleteMemoShareRequest, emptypb.Empty](
 			httpClient,
 			baseURL+MemoServiceDeleteMemoShareProcedure,
@@ -308,6 +320,7 @@ type memoServiceClient struct {
 	deleteMemoReaction     *connect.Client[v1.DeleteMemoReactionRequest, emptypb.Empty]
 	createMemoShare        *connect.Client[v1.CreateMemoShareRequest, v1.MemoShare]
 	listMemoShares         *connect.Client[v1.ListMemoSharesRequest, v1.ListMemoSharesResponse]
+	updateMemoShare        *connect.Client[v1.UpdateMemoShareRequest, v1.MemoShare]
 	deleteMemoShare        *connect.Client[v1.DeleteMemoShareRequest, emptypb.Empty]
 	getSharedMemo          *connect.Client[v1.GetSharedMemoRequest, v1.Memo]
 	listSharedMemoComments *connect.Client[v1.ListSharedMemoCommentsRequest, v1.ListSharedMemoCommentsResponse]
@@ -395,6 +408,11 @@ func (c *memoServiceClient) ListMemoShares(ctx context.Context, req *connect.Req
 	return c.listMemoShares.CallUnary(ctx, req)
 }
 
+// UpdateMemoShare calls memos.api.v1.MemoService.UpdateMemoShare.
+func (c *memoServiceClient) UpdateMemoShare(ctx context.Context, req *connect.Request[v1.UpdateMemoShareRequest]) (*connect.Response[v1.MemoShare], error) {
+	return c.updateMemoShare.CallUnary(ctx, req)
+}
+
 // DeleteMemoShare calls memos.api.v1.MemoService.DeleteMemoShare.
 func (c *memoServiceClient) DeleteMemoShare(ctx context.Context, req *connect.Request[v1.DeleteMemoShareRequest]) (*connect.Response[emptypb.Empty], error) {
 	return c.deleteMemoShare.CallUnary(ctx, req)
@@ -461,6 +479,9 @@ type MemoServiceHandler interface {
 	CreateMemoShare(context.Context, *connect.Request[v1.CreateMemoShareRequest]) (*connect.Response[v1.MemoShare], error)
 	// ListMemoShares lists all share links for a memo. Requires authentication as the memo creator.
 	ListMemoShares(context.Context, *connect.Request[v1.ListMemoSharesRequest]) (*connect.Response[v1.ListMemoSharesResponse], error)
+	// UpdateMemoShare changes what an existing share link permits.
+	// Requires authentication as the memo creator.
+	UpdateMemoShare(context.Context, *connect.Request[v1.UpdateMemoShareRequest]) (*connect.Response[v1.MemoShare], error)
 	// DeleteMemoShare revokes a share link. Requires authentication as the memo creator.
 	DeleteMemoShare(context.Context, *connect.Request[v1.DeleteMemoShareRequest]) (*connect.Response[emptypb.Empty], error)
 	// GetSharedMemo resolves a share token to its memo. No authentication required.
@@ -579,6 +600,12 @@ func NewMemoServiceHandler(svc MemoServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(memoServiceMethods.ByName("ListMemoShares")),
 		connect.WithHandlerOptions(opts...),
 	)
+	memoServiceUpdateMemoShareHandler := connect.NewUnaryHandler(
+		MemoServiceUpdateMemoShareProcedure,
+		svc.UpdateMemoShare,
+		connect.WithSchema(memoServiceMethods.ByName("UpdateMemoShare")),
+		connect.WithHandlerOptions(opts...),
+	)
 	memoServiceDeleteMemoShareHandler := connect.NewUnaryHandler(
 		MemoServiceDeleteMemoShareProcedure,
 		svc.DeleteMemoShare,
@@ -643,6 +670,8 @@ func NewMemoServiceHandler(svc MemoServiceHandler, opts ...connect.HandlerOption
 			memoServiceCreateMemoShareHandler.ServeHTTP(w, r)
 		case MemoServiceListMemoSharesProcedure:
 			memoServiceListMemoSharesHandler.ServeHTTP(w, r)
+		case MemoServiceUpdateMemoShareProcedure:
+			memoServiceUpdateMemoShareHandler.ServeHTTP(w, r)
 		case MemoServiceDeleteMemoShareProcedure:
 			memoServiceDeleteMemoShareHandler.ServeHTTP(w, r)
 		case MemoServiceGetSharedMemoProcedure:
@@ -724,6 +753,10 @@ func (UnimplementedMemoServiceHandler) CreateMemoShare(context.Context, *connect
 
 func (UnimplementedMemoServiceHandler) ListMemoShares(context.Context, *connect.Request[v1.ListMemoSharesRequest]) (*connect.Response[v1.ListMemoSharesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.ListMemoShares is not implemented"))
+}
+
+func (UnimplementedMemoServiceHandler) UpdateMemoShare(context.Context, *connect.Request[v1.UpdateMemoShareRequest]) (*connect.Response[v1.MemoShare], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("memos.api.v1.MemoService.UpdateMemoShare is not implemented"))
 }
 
 func (UnimplementedMemoServiceHandler) DeleteMemoShare(context.Context, *connect.Request[v1.DeleteMemoShareRequest]) (*connect.Response[emptypb.Empty], error) {

@@ -10,6 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	apiv1 "github.com/usememos/memos/proto/gen/api/v1"
 	"github.com/usememos/memos/store"
 )
@@ -511,4 +514,138 @@ func TestListSharedMemoComments_ReturnsNotFoundForExpiredShare(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.Equal(t, codes.NotFound, status.Code(err))
+}
+
+func TestUpdateMemoShare_ChangesOptionsAndExpiry(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	user, err := ts.CreateRegularUser(ctx, "share-update-owner")
+	require.NoError(t, err)
+	userCtx := ts.CreateUserContext(ctx, user.ID)
+
+	memo, err := ts.Service.CreateMemo(userCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{Content: "updatable share", Visibility: apiv1.Visibility_PRIVATE},
+	})
+	require.NoError(t, err)
+
+	share, err := ts.Service.CreateMemoShare(userCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+	require.True(t, share.GetAllowDownload())
+	require.True(t, share.GetIncludeComments())
+
+	disabled := false
+	expireAt := time.Now().Add(48 * time.Hour)
+	updated, err := ts.Service.UpdateMemoShare(userCtx, &apiv1.UpdateMemoShareRequest{
+		MemoShare: &apiv1.MemoShare{
+			Name:            share.Name,
+			AllowDownload:   &disabled,
+			IncludeComments: &disabled,
+			ExpireTime:      timestamppb.New(expireAt),
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"allow_download", "include_comments", "expire_time"}},
+	})
+	require.NoError(t, err)
+	require.False(t, updated.GetAllowDownload())
+	require.False(t, updated.GetIncludeComments())
+	require.NotNil(t, updated.ExpireTime)
+	require.WithinDuration(t, expireAt, updated.ExpireTime.AsTime(), time.Minute)
+
+	// Clearing expire_time turns the link back into one that never expires.
+	cleared, err := ts.Service.UpdateMemoShare(userCtx, &apiv1.UpdateMemoShareRequest{
+		MemoShare:  &apiv1.MemoShare{Name: share.Name},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"expire_time"}},
+	})
+	require.NoError(t, err)
+	require.Nil(t, cleared.ExpireTime)
+	// Options outside the mask are untouched.
+	require.False(t, cleared.GetAllowDownload())
+}
+
+func TestUpdateMemoShare_RejectsOtherUsersAndBadInput(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	owner, err := ts.CreateRegularUser(ctx, "share-update-owner-2")
+	require.NoError(t, err)
+	stranger, err := ts.CreateRegularUser(ctx, "share-update-stranger")
+	require.NoError(t, err)
+
+	ownerCtx := ts.CreateUserContext(ctx, owner.ID)
+	strangerCtx := ts.CreateUserContext(ctx, stranger.ID)
+
+	memo, err := ts.Service.CreateMemo(ownerCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{Content: "guarded share", Visibility: apiv1.Visibility_PRIVATE},
+	})
+	require.NoError(t, err)
+	share, err := ts.Service.CreateMemoShare(ownerCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+
+	disabled := false
+	_, err = ts.Service.UpdateMemoShare(strangerCtx, &apiv1.UpdateMemoShareRequest{
+		MemoShare:  &apiv1.MemoShare{Name: share.Name, AllowDownload: &disabled},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"allow_download"}},
+	})
+	require.Error(t, err)
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+
+	_, err = ts.Service.UpdateMemoShare(ownerCtx, &apiv1.UpdateMemoShareRequest{
+		MemoShare:  &apiv1.MemoShare{Name: share.Name},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"view_count"}},
+	})
+	require.Error(t, err)
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+
+	past := timestamppb.New(time.Now().Add(-time.Hour))
+	_, err = ts.Service.UpdateMemoShare(ownerCtx, &apiv1.UpdateMemoShareRequest{
+		MemoShare:  &apiv1.MemoShare{Name: share.Name, ExpireTime: past},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"expire_time"}},
+	})
+	require.Error(t, err)
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestGetSharedMemo_CountsViews(t *testing.T) {
+	ctx := context.Background()
+
+	ts := NewTestService(t)
+	defer ts.Cleanup()
+
+	user, err := ts.CreateRegularUser(ctx, "share-view-owner")
+	require.NoError(t, err)
+	userCtx := ts.CreateUserContext(ctx, user.ID)
+
+	memo, err := ts.Service.CreateMemo(userCtx, &apiv1.CreateMemoRequest{
+		Memo: &apiv1.Memo{Content: "counted share", Visibility: apiv1.Visibility_PRIVATE},
+	})
+	require.NoError(t, err)
+	share, err := ts.Service.CreateMemoShare(userCtx, &apiv1.CreateMemoShareRequest{
+		Parent:    memo.Name,
+		MemoShare: &apiv1.MemoShare{},
+	})
+	require.NoError(t, err)
+	require.Zero(t, share.ViewCount)
+	require.Nil(t, share.LastViewTime)
+
+	shareToken := share.Name[strings.LastIndex(share.Name, "/")+1:]
+	for range 3 {
+		_, err = ts.Service.GetSharedMemo(ctx, &apiv1.GetSharedMemoRequest{ShareToken: shareToken})
+		require.NoError(t, err)
+	}
+
+	listed, err := ts.Service.ListMemoShares(userCtx, &apiv1.ListMemoSharesRequest{Parent: memo.Name})
+	require.NoError(t, err)
+	require.Len(t, listed.MemoShares, 1)
+	require.Equal(t, int32(3), listed.MemoShares[0].ViewCount)
+	require.NotNil(t, listed.MemoShares[0].LastViewTime)
 }

@@ -11,6 +11,7 @@ import {
   ListMemoSharesRequestSchema,
   ListSharedMemoCommentsRequestSchema,
   MemoShareSchema,
+  UpdateMemoShareRequestSchema,
 } from "@/types/proto/api/v1/memo_service_pb";
 
 // Query keys factory for share-related cache management.
@@ -57,6 +58,50 @@ export function useCreateMemoShare() {
       });
       const response = await memoServiceClient.createMemoShare(create(CreateMemoShareRequestSchema, { parent: memoName, memoShare }));
       return response;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: memoShareKeys.list(variables.memoName) });
+    },
+  });
+}
+
+/**
+ * Changes what an existing share link permits.
+ *
+ * Only the paths listed in the mask are touched, so toggling one option cannot
+ * silently reset the others. Clearing the expiry means passing `expire_time` in
+ * the mask with no value.
+ */
+export function useUpdateMemoShare() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      memoName: _memoName,
+      allowDownload,
+      includeComments,
+      expireTime,
+      clearExpireTime,
+    }: {
+      name: string;
+      memoName: string;
+      allowDownload?: boolean;
+      includeComments?: boolean;
+      expireTime?: Date;
+      clearExpireTime?: boolean;
+    }) => {
+      const paths: string[] = [];
+      if (allowDownload !== undefined) paths.push("allow_download");
+      if (includeComments !== undefined) paths.push("include_comments");
+      if (expireTime || clearExpireTime) paths.push("expire_time");
+
+      const memoShare = create(MemoShareSchema, {
+        name,
+        allowDownload,
+        includeComments,
+        expireTime: expireTime ? timestampFromDate(expireTime) : undefined,
+      });
+      return await memoServiceClient.updateMemoShare(create(UpdateMemoShareRequestSchema, { memoShare, updateMask: { paths } }));
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: memoShareKeys.list(variables.memoName) });

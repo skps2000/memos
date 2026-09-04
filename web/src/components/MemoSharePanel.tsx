@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { getShareUrl, useCreateMemoShare, useDeleteMemoShare, useMemoShares } from "@/hooks/useMemoShareQueries";
+import { getShareUrl, useCreateMemoShare, useDeleteMemoShare, useMemoShares, useUpdateMemoShare } from "@/hooks/useMemoShareQueries";
 import type { MemoShare } from "@/types/proto/api/v1/memo_service_pb";
 import { useTranslate } from "@/utils/i18n";
 
@@ -29,6 +29,16 @@ function formatExpiry(share: MemoShare, t: ReturnType<typeof useTranslate>): str
   return t("memo.share.expires-on", { date: d.toLocaleDateString() });
 }
 
+/** Summarises how the link has been used, which is what matters if it ever leaks. */
+function formatViews(share: MemoShare, t: ReturnType<typeof useTranslate>): string {
+  if (share.viewCount === 0) return t("memo.share.never-opened");
+  if (!share.lastViewTime) return t("memo.share.view-count", { count: share.viewCount });
+  return t("memo.share.view-count-with-last", {
+    count: share.viewCount,
+    date: timestampDate(share.lastViewTime).toLocaleString(),
+  });
+}
+
 interface ShareLinkRowProps {
   share: MemoShare;
   memoName: string;
@@ -38,7 +48,16 @@ function ShareLinkRow({ share, memoName }: ShareLinkRowProps) {
   const t = useTranslate();
   const [copied, setCopied] = useState(false);
   const deleteShare = useDeleteMemoShare();
+  const updateShare = useUpdateMemoShare();
   const url = getShareUrl(share);
+
+  const handleToggle = async (change: { allowDownload?: boolean; includeComments?: boolean }) => {
+    try {
+      await updateShare.mutateAsync({ name: share.name, memoName, ...change });
+    } catch (e) {
+      toast.error((e as ConnectError).message || t("memo.share.update-failed"));
+    }
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(url);
@@ -77,18 +96,32 @@ function ShareLinkRow({ share, memoName }: ShareLinkRowProps) {
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>{formatExpiry(share, t)}</span>
-        {share.allowDownload && (
-          <span className="flex items-center gap-1">
-            <DownloadIcon className="h-3 w-3" />
-            {t("memo.share.grants-download")}
+        <span>{formatViews(share, t)}</span>
+      </div>
+
+      <div className="mt-1 flex flex-col gap-2 border-t border-border/60 pt-2">
+        <label className="flex items-center justify-between gap-2 text-xs">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <DownloadIcon className="h-3.5 w-3.5" />
+            {t("memo.share.allow-download")}
           </span>
-        )}
-        {share.includeComments && (
-          <span className="flex items-center gap-1">
-            <MessageCircleIcon className="h-3 w-3" />
-            {t("memo.share.grants-comments")}
+          <Switch
+            checked={share.allowDownload ?? false}
+            disabled={updateShare.isPending}
+            onCheckedChange={(checked) => handleToggle({ allowDownload: checked })}
+          />
+        </label>
+        <label className="flex items-center justify-between gap-2 text-xs">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <MessageCircleIcon className="h-3.5 w-3.5" />
+            {t("memo.share.include-comments")}
           </span>
-        )}
+          <Switch
+            checked={share.includeComments ?? false}
+            disabled={updateShare.isPending}
+            onCheckedChange={(checked) => handleToggle({ includeComments: checked })}
+          />
+        </label>
       </div>
     </div>
   );

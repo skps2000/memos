@@ -245,3 +245,36 @@ func TestRewriteAttachmentReferences(t *testing.T) {
 	untouched := "![other](/file/attachments/zzz999/other.png)"
 	require.Equal(t, untouched, rewriteAttachmentReferences(untouched, attachments, paths))
 }
+
+func TestExportSharedMemo_CountsTheDownloadAsAccess(t *testing.T) {
+	ctx := context.Background()
+	svc, fs, testStore, cleanup := newShareAttachmentTestServices(ctx, t)
+	defer cleanup()
+
+	fixture := newExportFixture(ctx, t, svc, fs, nil)
+
+	require.Equal(t, http.StatusOK, get(t, fixture.echo, "/export/shares/"+fixture.shareToken+"?format=md").Code)
+	require.Equal(t, http.StatusOK, get(t, fixture.echo, "/export/shares/"+fixture.shareToken+"?format=json").Code)
+
+	share, err := testStore.GetMemoShare(ctx, &store.FindMemoShare{UID: &fixture.shareToken})
+	require.NoError(t, err)
+	require.NotNil(t, share)
+	require.Equal(t, int32(2), share.ViewCount)
+	require.NotNil(t, share.LastAccessedTs)
+}
+
+func TestExportSharedMemo_DoesNotCountRefusedDownloads(t *testing.T) {
+	ctx := context.Background()
+	svc, fs, testStore, cleanup := newShareAttachmentTestServices(ctx, t)
+	defer cleanup()
+
+	disabled := false
+	fixture := newExportFixture(ctx, t, svc, fs, &apiv1.MemoShare{AllowDownload: &disabled})
+
+	require.Equal(t, http.StatusForbidden, get(t, fixture.echo, "/export/shares/"+fixture.shareToken).Code)
+
+	share, err := testStore.GetMemoShare(ctx, &store.FindMemoShare{UID: &fixture.shareToken})
+	require.NoError(t, err)
+	require.Zero(t, share.ViewCount)
+	require.Nil(t, share.LastAccessedTs)
+}

@@ -123,6 +123,15 @@ service MemoService {
     option (google.api.http) = {get: "/api/v1/{parent=memos/*}/shares"};
     option (google.api.method_signature) = "parent";
   }
+  // UpdateMemoShare changes what an existing share link permits.
+  // Requires authentication as the memo creator.
+  rpc UpdateMemoShare(UpdateMemoShareRequest) returns (MemoShare) {
+    option (google.api.http) = {
+      patch: "/api/v1/{memo_share.name=memos/*/shares/*}"
+      body: "memo_share"
+    };
+    option (google.api.method_signature) = "memo_share,update_mask";
+  }
   // DeleteMemoShare revokes a share link. Requires authentication as the memo creator.
   rpc DeleteMemoShare(DeleteMemoShareRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {delete: "/api/v1/{name=memos/*/shares/*}"};
@@ -600,6 +609,12 @@ message MemoShare {
   // Optional. Whether the memo's comments are visible to the link holder.
   // Unset on create means enabled.
   optional bool include_comments = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. How many times the link has been opened.
+  int32 view_count = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. When the link was last opened. Unset if it never has been.
+  optional google.protobuf.Timestamp last_view_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 message CreateMemoShareRequest {
@@ -626,6 +641,15 @@ message ListMemoSharesRequest {
 message ListMemoSharesResponse {
   // The list of share links.
   repeated MemoShare memo_shares = 1;
+}
+
+message UpdateMemoShareRequest {
+  // Required. The share to update, identified by its resource name.
+  MemoShare memo_share = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The fields to update.
+  // Supported paths: expire_time, allow_download, include_comments.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 message DeleteMemoShareRequest {

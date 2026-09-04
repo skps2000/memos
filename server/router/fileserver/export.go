@@ -173,6 +173,12 @@ func (s *FileServerService) exportSharedMemo(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "not found")
 	}
 
+	// Downloading is a use of the link in its own right, not a side effect of the
+	// page load that may have preceded it. Bookkeeping never fails the download.
+	if err := s.Store.RecordMemoShareAccess(ctx, ms.UID, time.Now().Unix()); err != nil {
+		slog.Warn("failed to record memo share access", slog.String("share_uid", ms.UID), slog.Any("err", err))
+	}
+
 	return s.writeMemoExport(c, memo, exportOptions{includeComments: ms.IncludeComments})
 }
 
