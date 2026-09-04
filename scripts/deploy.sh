@@ -98,9 +98,13 @@ UNIT_NEW="/tmp/memos.service.new"
 DB_FILE="/var/opt/memos/memos_prod.db"
 DB_BACKUP_DIR="/var/opt/memos/backups"
 DB_BACKUP_KEEP=7
-# 바이너리 백업은 지우지 않는다. 어느 것이 어떤 배포였는지는 파일 이름의 타임스탬프뿐이라
-# 자동으로 버리기에는 위험하다. 대신 쌓이면 알려준다.
-BIN_BACKUP_WARN=10
+# 타임스탬프가 붙은 바이너리 백업은 최근 것만 남긴다. 예전에는 하나도 지우지 않고
+# 개수만 경고했는데, 배포 1회당 62MB가 영구히 쌓여 8.7GB 드롭릿의 디스크를 실제로
+# 밀어냈다(정리 직전 /usr/local/memos 가 1.3GB, 루트 사용률 92%). 롤백은 같은 실행에서
+# 방금 뜬 ${BACKUP} 만 쓰므로 3개면 넉넉하고, 더 옛날 것이 필요하면 그 커밋으로 다시
+# 빌드하면 된다. 반대로 손으로 이름을 붙인 백업(memos.bak.pre-* 같은 것)은 무엇인지
+# 알고 남긴 것이므로 건드리지 않고 개수만 알린다.
+BIN_BACKUP_KEEP=3
 
 COMMIT="${1:-unknown}"
 
@@ -163,9 +167,14 @@ done
 if [ "${OK}" -eq 1 ]; then
   rm -f /tmp/memos.new "${UNIT_NEW}"
   echo "배포 성공: ${STAMP} (${COMMIT})"
-  BIN_BACKUPS="$(ls -1 "${INSTALL_DIR}"/memos.bak.* 2>/dev/null | wc -l | tr -d ' ')"
-  if [ "${BIN_BACKUPS}" -ge "${BIN_BACKUP_WARN}" ]; then
-    echo "참고: 바이너리 백업이 ${BIN_BACKUPS}개($(du -sh "${INSTALL_DIR}" | cut -f1)) 쌓였습니다. 필요 없는 것은 직접 지우세요."
+  # 최근 ${BIN_BACKUP_KEEP}개만 남기고 정리. 방금 뜬 ${BACKUP} 이 가장 최신이라 항상 살아남는다.
+  # v 접두사가 붙은 것만 고르므로 손으로 이름 붙인 백업은 걸리지 않는다.
+  ls -1t "${INSTALL_DIR}"/memos.bak.v* 2>/dev/null | tail -n "+$((BIN_BACKUP_KEEP + 1))" | while read -r old; do
+    rm -f "${old}" && echo "오래된 백업 정리: ${old}"
+  done
+  NAMED="$(ls -1 "${INSTALL_DIR}"/memos.bak.* 2>/dev/null | grep -cv '/memos\.bak\.v[0-9]' | tr -d ' ')"
+  if [ "${NAMED}" -gt 0 ]; then
+    echo "참고: 이름을 붙인 바이너리 백업이 ${NAMED}개 남아 있습니다(${INSTALL_DIR} 합계 $(du -sh "${INSTALL_DIR}" | cut -f1)). 자동 정리 대상이 아니니 필요 없는 것은 직접 지우세요."
   fi
 else
   echo "헬스체크 실패. 롤백합니다..."
