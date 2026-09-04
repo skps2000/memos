@@ -44,7 +44,20 @@ describe("MemoSharePanel link options", () => {
 
   it("shows how often the link has been opened", () => {
     renderPanel();
-    expect(screen.getByText(/memo\.share\.view-count-with-last/)).toBeInTheDocument();
+    expect(screen.getByText(/memo\.share\.view-count-with-last_other/)).toBeInTheDocument();
+  });
+
+  it("uses the singular form for a link opened once", () => {
+    memoShares.current = [
+      create(MemoShareSchema, {
+        name: "memos/detail/shares/once",
+        createTime: timestampFromDate(new Date("2026-09-01T00:00:00Z")),
+        viewCount: 1,
+        lastViewTime: timestampFromDate(new Date("2026-09-05T00:00:00Z")),
+      }),
+    ];
+    renderPanel();
+    expect(screen.getByText(/memo\.share\.view-count-with-last_one/)).toBeInTheDocument();
   });
 
   it("says so when a link has never been opened", () => {

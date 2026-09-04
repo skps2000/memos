@@ -32,11 +32,17 @@ function formatExpiry(share: MemoShare, t: ReturnType<typeof useTranslate>): str
 /** Summarises how the link has been used, which is what matters if it ever leaks. */
 function formatViews(share: MemoShare, t: ReturnType<typeof useTranslate>): string {
   if (share.viewCount === 0) return t("memo.share.never-opened");
-  if (!share.lastViewTime) return t("memo.share.view-count", { count: share.viewCount });
-  return t("memo.share.view-count-with-last", {
-    count: share.viewCount,
-    date: timestampDate(share.lastViewTime).toLocaleString(),
-  });
+
+  // The translation type is a flat key union, so the plural suffix is chosen here
+  // rather than left to i18next — the same way scope counts are handled.
+  const count = share.viewCount;
+  if (!share.lastViewTime) {
+    return count === 1 ? t("memo.share.view-count_one", { count }) : t("memo.share.view-count_other", { count });
+  }
+  const date = timestampDate(share.lastViewTime).toLocaleString();
+  return count === 1
+    ? t("memo.share.view-count-with-last_one", { count, date })
+    : t("memo.share.view-count-with-last_other", { count, date });
 }
 
 interface ShareLinkRowProps {
