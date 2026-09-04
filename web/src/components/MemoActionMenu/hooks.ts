@@ -3,7 +3,6 @@ import copy from "copy-to-clipboard";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { useLocation } from "react-router-dom";
-import { useInstance } from "@/contexts/InstanceContext";
 import { memoKeys, useDeleteMemo, useUpdateMemo } from "@/hooks/useMemoQueries";
 import useNavigateTo from "@/hooks/useNavigateTo";
 import { userKeys } from "@/hooks/useUserQueries";
@@ -25,7 +24,6 @@ export const useMemoActionHandlers = ({ memo, onEdit, setDeleteDialogOpen }: Use
   const location = useLocation();
   const navigateTo = useNavigateTo();
   const queryClient = useQueryClient();
-  const { profile } = useInstance();
   const { mutateAsync: updateMemo } = useUpdateMemo();
   const { mutateAsync: deleteMemo } = useDeleteMemo();
   const isInMemoDetailPage = location.pathname.startsWith(`/${memo.name}`);
@@ -106,15 +104,6 @@ export const useMemoActionHandlers = ({ memo, onEdit, setDeleteDialogOpen }: Use
     memoUpdatedCallback();
   }, [memo.name, memo.state, t, isInMemoDetailPage, navigateTo, memoUpdatedCallback, updateMemo]);
 
-  const handleCopyLink = useCallback(() => {
-    let host = profile.instanceUrl;
-    if (host === "") {
-      host = window.location.origin;
-    }
-    copy(`${host}/${memo.name}`);
-    toast.success(t("message.succeed-copy-link"));
-  }, [memo.name, t, profile.instanceUrl]);
-
   const handleCopyContent = useCallback(() => {
     copy(memo.content);
     toast.success(t("message.succeed-copy-content"));
@@ -153,7 +142,6 @@ export const useMemoActionHandlers = ({ memo, onEdit, setDeleteDialogOpen }: Use
     handleTogglePinMemoBtnClick,
     handleEditMemoClick,
     handleToggleMemoStatusClick,
-    handleCopyLink,
     handleCopyContent,
     handleCheckAllTaskListItemsClick,
     handleUncheckAllTaskListItemsClick,

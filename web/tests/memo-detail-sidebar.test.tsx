@@ -1,4 +1,5 @@
 import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,14 +12,23 @@ import {
   MemoRelation_Type,
   MemoRelationSchema,
   MemoSchema,
+  MemoShareSchema,
   Visibility,
 } from "@/types/proto/api/v1/memo_service_pb";
 
 const copyToClipboard = vi.hoisted(() => vi.fn());
 const updateMemo = vi.hoisted(() => vi.fn());
+const toastSuccess = vi.hoisted(() => vi.fn());
+// The share links the memo has, as the sidebar would see them. Real selection
+// logic stays in play; only the request that fetches them is stubbed.
+const memoShares = vi.hoisted(() => ({ current: [] as unknown[] }));
 
 vi.mock("copy-to-clipboard", () => ({ default: copyToClipboard }));
-vi.mock("react-hot-toast", () => ({ default: { success: vi.fn() } }));
+vi.mock("react-hot-toast", () => ({ default: { success: toastSuccess, error: vi.fn() } }));
+vi.mock("@/hooks/useMemoShareQueries", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useMemoShareQueries")>()),
+  useMemoShares: () => ({ data: memoShares.current }),
+}));
 vi.mock("@/components/MemoDetailSidebar/MemoOutline", () => ({
   default: ({ headings }: { headings: unknown[] }) => <div data-testid="outline">{headings.length}</div>,
 }));
@@ -32,6 +42,8 @@ vi.mock("@/utils/i18n", () => ({ useTranslate: () => (key: string) => key }));
 describe("MemoDetailSidebar", () => {
   beforeEach(() => {
     copyToClipboard.mockReset();
+    toastSuccess.mockReset();
+    memoShares.current = [];
     updateMemo.mockReset();
     updateMemo.mockResolvedValue(undefined);
   });
@@ -151,5 +163,60 @@ describe("MemoDetailSidebar", () => {
 
     expect(screen.getByText("memo.outline")).toBeInTheDocument();
     expect(screen.getByTestId("outline")).toHaveTextContent("2");
+  });
+
+  it("copies the share link instead of the memo URL when the memo has one", async () => {
+    const memo = create(MemoSchema, {
+      name: "memos/detail",
+      creator: "users/alice",
+      state: State.NORMAL,
+      visibility: Visibility.PRIVATE,
+      content: "Private notes",
+    });
+    memoShares.current = [
+      create(MemoShareSchema, {
+        name: "memos/detail/shares/expiring",
+        createTime: timestampFromDate(new Date("2026-09-01T00:00:00Z")),
+        expireTime: timestampFromDate(new Date("2099-01-01T00:00:00Z")),
+      }),
+      create(MemoShareSchema, {
+        name: "memos/detail/shares/permanent",
+        createTime: timestampFromDate(new Date("2026-09-02T00:00:00Z")),
+      }),
+    ];
+
+    render(
+      <MemoryRouter>
+        <MemoDetailSidebar memo={memo} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "common.share" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "memo.copy-link" }));
+
+    // The link that never expires wins over the one that merely lasts a long time.
+    expect(copyToClipboard).toHaveBeenCalledWith("https://memos.example/memos/shares/permanent");
+    expect(toastSuccess).toHaveBeenCalledWith("message.succeed-copy-share-link");
+  });
+
+  it("copies the link the reader arrived on when the memo was opened through a share", async () => {
+    const memo = create(MemoSchema, {
+      name: "memos/detail",
+      creator: "users/bob",
+      state: State.NORMAL,
+      visibility: Visibility.PRIVATE,
+      content: "Shared with me",
+    });
+
+    render(
+      <MemoryRouter>
+        <MemoDetailSidebar memo={memo} forceReadonly shareToken="arrived-on" />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "common.share" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "memo.copy-link" }));
+
+    expect(copyToClipboard).toHaveBeenCalledWith("https://memos.example/memos/shares/arrived-on");
   });
 });

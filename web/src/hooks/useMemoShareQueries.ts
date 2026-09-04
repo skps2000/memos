@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { timestampDate, timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memoServiceClient } from "@/connect";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
@@ -107,10 +107,33 @@ export function useSharedMemoComments(shareToken: string, options?: { enabled?: 
 /**
  * Returns the share URL for a MemoShare resource.
  * The token is the last path segment of the share name (memos/{uid}/shares/{token}).
+ * Pass `host` to build the link against the instance URL rather than the current origin.
  */
-export function getShareUrl(share: MemoShare): string {
+export function getShareUrl(share: MemoShare, host?: string): string {
   const token = share.name.split("/").pop() ?? "";
-  return `${window.location.origin}/memos/shares/${token}`;
+  return `${host || window.location.origin}/memos/shares/${token}`;
+}
+
+/**
+ * Picks the share link to hand out when a memo has several.
+ *
+ * Expired links are skipped, and a link that never expires wins over one that
+ * does — copying a link that dies tomorrow when a permanent one exists is the
+ * surprising outcome. Among links that do expire, the one that lasts longest
+ * wins, and creation time breaks the remaining ties in favour of the newest.
+ */
+export function pickPreferredShare(shares: readonly MemoShare[], now: Date = new Date()): MemoShare | undefined {
+  const expiresAt = (share: MemoShare) => (share.expireTime ? timestampDate(share.expireTime).getTime() : Number.POSITIVE_INFINITY);
+  const createdAt = (share: MemoShare) => (share.createTime ? timestampDate(share.createTime).getTime() : 0);
+
+  return shares
+    .filter((share) => expiresAt(share) > now.getTime())
+    .reduce<MemoShare | undefined>((best, share) => {
+      if (!best) return share;
+      const [shareExpiry, bestExpiry] = [expiresAt(share), expiresAt(best)];
+      if (shareExpiry !== bestExpiry) return shareExpiry > bestExpiry ? share : best;
+      return createdAt(share) > createdAt(best) ? share : best;
+    }, undefined);
 }
 
 /**

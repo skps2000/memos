@@ -25,6 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCopyMemoLink } from "@/hooks/useCopyMemoLink";
 import { State } from "@/types/proto/api/v1/common_pb";
 import { useTranslate } from "@/utils/i18n";
 import { useMemoActionHandlers } from "./hooks";
@@ -36,6 +37,10 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
 
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // A menu is rendered per memo in a list, so the memo's share links are only
+  // looked up while this one is open.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const handleCopyLink = useCopyMemoLink(memo, { enabled: menuOpen });
 
   // Derived state
   const isComment = Boolean(memo.parent);
@@ -48,7 +53,6 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
     handleTogglePinMemoBtnClick,
     handleEditMemoClick,
     handleToggleMemoStatusClick,
-    handleCopyLink,
     handleCopyContent,
     handleCheckAllTaskListItemsClick,
     handleUncheckAllTaskListItemsClick,
@@ -61,7 +65,7 @@ const MemoActionMenu = (props: MemoActionMenuProps) => {
   });
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-4" />}>
         <MoreVerticalIcon className="text-muted-foreground" />
       </DropdownMenuTrigger>

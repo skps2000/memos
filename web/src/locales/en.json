@@ -474,6 +474,7 @@
     "password-not-match": "Passwords do not match.",
     "restored-successfully": "Restored successfully",
     "succeed-copy-content": "Content copied successfully.",
+    "succeed-copy-share-link": "Share link copied — opens without signing in",
     "succeed-copy-link": "Link copied successfully.",
     "update-succeed": "Update succeeded",
     "user-not-found": "User not found"

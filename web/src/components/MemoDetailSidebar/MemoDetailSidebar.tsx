@@ -1,4 +1,3 @@
-import copy from "copy-to-clipboard";
 import {
   BookmarkCheckIcon,
   BookmarkIcon,
@@ -26,8 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useInstance } from "@/contexts/InstanceContext";
 import { useOverflowTitle } from "@/hooks";
+import { useCopyMemoLink } from "@/hooks/useCopyMemoLink";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { MemoExportError, type MemoExportFormat, useMemoExport } from "@/hooks/useMemoExport";
 import { useUpdateMemo } from "@/hooks/useMemoQueries";
@@ -73,7 +72,6 @@ const BacklinkRow = ({ relation, snippet }: { relation: MemoRelation; snippet: s
 const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = false, shareToken }: Props) => {
   const t = useTranslate();
   const currentUser = useCurrentUser();
-  const { profile } = useInstance();
   const { mutateAsync: updateMemo } = useUpdateMemo();
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const { exportMemo, pendingFormat, isExporting } = useMemoExport();
@@ -117,11 +115,7 @@ const MemoDetailSidebar = ({ memo, className, onShareImageOpen, forceReadonly = 
     await updateMemo({ update: { name: memo.name, pinned: !memo.pinned }, updateMask: ["pinned"] });
   };
 
-  const handleCopyLink = () => {
-    const host = profile.instanceUrl || window.location.origin;
-    copy(`${host}/${memo.name}`);
-    toast.success(t("message.succeed-copy-link"));
-  };
+  const handleCopyLink = useCopyMemoLink(memo, { shareToken });
 
   return (
     <div className={cn("relative w-full select-none", SIDEBAR_SECTION_STACK_CLASSES, className)}>
