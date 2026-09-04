@@ -139,13 +139,14 @@ export const useInlineImageUpload = (editorRef: RefObject<EditorController | nul
   const retryJob = useCallback((id: string) => void runJobRef.current(id), []);
 
   const descriptorFor = useCallback(
-    (job: UploadJob, status: "uploading" | "failed") => {
+    (job: UploadJob, status: "uploading" | "failed", percent?: number) => {
       const completed = job.entries.filter((entry) => entry.attachment).length;
       return {
         id: job.id,
         status,
         completed,
         total: job.entries.length,
+        percent,
         message: t(status === "uploading" ? "editor.insert-menu.uploading-images" : "editor.insert-menu.image-upload-stopped", {
           completed,
           total: job.entries.length,
@@ -169,13 +170,22 @@ export const useInlineImageUpload = (editorRef: RefObject<EditorController | nul
       editorRef.current?.updateUploadAnchor(descriptorFor(job, "uploading"));
 
       let lastError: unknown;
-      for (const entry of job.entries) {
+      for (const [offset, entry] of job.entries.entries()) {
         if (entry.attachment) continue;
         try {
-          entry.attachment = await uploadService.uploadFile(entry.localFile);
+          // Redraw only on a whole-percent change: progress events arrive far faster
+          // than the anchor is worth re-rendering, and each redraw is a CodeMirror dispatch.
+          let lastPercent = -1;
+          entry.attachment = await uploadService.uploadFile(entry.localFile, (loaded, total) => {
+            if (disposedRef.current || total <= 0) return;
+            const percent = Math.round(((offset + loaded / total) / job.entries.length) * 100);
+            if (percent === lastPercent) return;
+            lastPercent = percent;
+            editorRef.current?.updateUploadAnchor(descriptorFor(job, "uploading", percent));
+          });
           if (disposedRef.current) return;
           appendAttachment(entry.attachment, entry.localFile.previewUrl);
-          editorRef.current?.updateUploadAnchor(descriptorFor(job, "uploading"));
+          editorRef.current?.updateUploadAnchor(descriptorFor(job, "uploading", Math.round(((offset + 1) / job.entries.length) * 100)));
         } catch (error) {
           lastError = error;
         }

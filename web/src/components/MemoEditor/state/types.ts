@@ -1,6 +1,7 @@
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import type { Location, MemoRelation } from "@/types/proto/api/v1/memo_service_pb";
 import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
+import type { UploadProgress } from "../services/uploadService";
 import type { LocalFile } from "../types/attachment";
 
 export type LoadingKey = "saving" | "uploading" | "loading";
@@ -23,6 +24,8 @@ export interface EditorState {
       uploading: boolean;
       loading: boolean;
     };
+    /** Progress of the attachment upload in flight, or undefined when nothing is uploading. */
+    uploadProgress?: UploadProgress;
   };
   timestamps: {
     createTime?: Date;
@@ -44,6 +47,7 @@ export type EditorAction =
   | { type: "TOGGLE_FOCUS_MODE" }
   | { type: "SET_LOADING"; payload: { key: LoadingKey; value: boolean } }
   | { type: "SET_PENDING_INLINE_IMAGE_INSERTIONS"; payload: number }
+  | { type: "SET_UPLOAD_PROGRESS"; payload: UploadProgress | undefined }
   | { type: "SET_TIMESTAMPS"; payload: Partial<EditorState["timestamps"]> }
   | { type: "SET_RECORDER_BUSY"; payload: boolean }
   | { type: "RESET" };
@@ -66,6 +70,7 @@ const defaultState: EditorState = {
       uploading: false,
       loading: false,
     },
+    uploadProgress: undefined,
   },
   timestamps: {
     createTime: undefined,

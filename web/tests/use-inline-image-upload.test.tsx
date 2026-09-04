@@ -76,7 +76,8 @@ describe("useInlineImageUpload", () => {
     act(() => result.current.insertLocalImages([localFile]));
 
     await waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
-    expect(upload).toHaveBeenCalledWith(localFile);
+    // The second argument is the byte-progress callback that drives the anchor's gauge.
+    expect(upload).toHaveBeenCalledWith(localFile, expect.any(Function));
   });
 
   test("retries only failed files and preserves their original placement", async () => {

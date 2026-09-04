@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { InstanceSetting_Key } from "@/types/proto/api/v1/instance_service_pb";
 import { useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString } from "@/utils/memo";
-import { AudioRecorderPanel, EditorContent, EditorMetadata, FocusModeOverlay, TimestampPopover } from "./components";
+import { AudioRecorderPanel, EditorContent, EditorMetadata, FocusModeOverlay, TimestampPopover, UploadProgressBar } from "./components";
 import { FOCUS_MODE_STYLES, FORMATTING_TOOLBAR_STORAGE_KEY } from "./constants";
 import {
   splitInlineLocalFiles,
@@ -325,6 +325,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
 
         {/* Metadata and toolbar grouped together at bottom */}
         <div className="w-full flex flex-col gap-2">
+          <UploadProgressBar />
           <EditorMetadata
             memoName={memoName}
             uploadingLocalFileURLs={inlineImageUpload.uploadingLocalFileURLs}

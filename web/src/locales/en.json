@@ -273,6 +273,11 @@
     "no-changes-detected": "No changes detected",
     "save": "Save",
     "saving": "Saving...",
+    "upload-progress": {
+      "label": "Upload progress",
+      "processing": "Loading {{filename}} on the server...",
+      "uploading": "Uploading {{filename}}..."
+    },
     "validation": {
       "cannot-save": "Cannot save",
       "content-required": "Content, attachment, or file required",

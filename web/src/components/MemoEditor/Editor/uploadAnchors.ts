@@ -8,6 +8,8 @@ export interface UploadAnchorDescriptor {
   status: UploadAnchorStatus;
   completed: number;
   total: number;
+  /** Bytes-sent percentage across the whole job, 0-100; absent when not measurable. */
+  percent?: number;
   message: string;
   retryLabel: string;
   keepLabel: string;
@@ -35,6 +37,7 @@ class UploadAnchorWidget extends WidgetType {
       a.status === b.status &&
       a.completed === b.completed &&
       a.total === b.total &&
+      a.percent === b.percent &&
       a.message === b.message &&
       a.retryLabel === b.retryLabel &&
       a.keepLabel === b.keepLabel &&
@@ -52,6 +55,13 @@ class UploadAnchorWidget extends WidgetType {
 
     const rail = document.createElement("span");
     rail.className = "cm-upload-anchor-rail";
+    if (this.descriptor.percent !== undefined) {
+      rail.classList.add("cm-upload-anchor-rail-track");
+      const fill = document.createElement("span");
+      fill.className = "cm-upload-anchor-rail-fill";
+      fill.style.height = `${this.descriptor.percent}%`;
+      rail.appendChild(fill);
+    }
     root.appendChild(rail);
 
     const badge = document.createElement("span");
@@ -62,6 +72,12 @@ class UploadAnchorWidget extends WidgetType {
       spinner.setAttribute("aria-hidden", "true");
       badge.appendChild(spinner);
       badge.append(this.descriptor.message);
+      if (this.descriptor.percent !== undefined) {
+        const percent = document.createElement("span");
+        percent.className = "cm-upload-anchor-percent";
+        percent.textContent = `${this.descriptor.percent}%`;
+        badge.appendChild(percent);
+      }
     } else {
       badge.append(this.descriptor.message);
     }

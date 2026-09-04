@@ -2,6 +2,7 @@ import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { getAccessToken, hasStoredToken, isTokenExpired, REQUEST_TOKEN_EXPIRY_BUFFER_MS, setAccessToken } from "./auth-state";
+import { withUploadProgress } from "./lib/upload-progress";
 import { AIService } from "./types/proto/api/v1/ai_service_pb";
 import { AttachmentService } from "./types/proto/api/v1/attachment_service_pb";
 import { AuthService } from "./types/proto/api/v1/auth_service_pb";
@@ -60,6 +61,11 @@ const fetchWithCredentials: typeof globalThis.fetch = (input, init) => {
     credentials: "include",
   });
 };
+
+// Requests tagged for progress reporting (attachment uploads) go over XHR so the
+// UI can show how many bytes have actually left the browser; everything else is
+// untouched. See lib/upload-progress.
+const fetchWithProgress = withUploadProgress(fetchWithCredentials);
 
 // Separate transport without auth interceptor to prevent recursion
 const refreshTransport = createConnectTransport({
@@ -184,7 +190,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 const transport = createConnectTransport({
   baseUrl: window.location.origin,
   useBinaryFormat: true,
-  fetch: fetchWithCredentials,
+  fetch: fetchWithProgress,
   interceptors: [authInterceptor],
 });
 

@@ -133,6 +133,11 @@
       "link-memo": "링크 메모",
       "upload-file": "파일 업로드"
     },
+    "upload-progress": {
+      "label": "업로드 진행률",
+      "processing": "{{filename}} 서버에서 처리 중... 로딩 중입니다",
+      "uploading": "{{filename}} 업로드 중..."
+    },
     "audio-recorder": {
       "attachment-label": "오디오 녹음",
       "attachment-label-with-time": "오디오 녹음 {{time}}",

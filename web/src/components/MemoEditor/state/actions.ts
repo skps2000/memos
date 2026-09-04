@@ -1,3 +1,4 @@
+import type { UploadProgress } from "../services/uploadService";
 import type { LocalFile } from "../types/attachment";
 import type { EditorAction, EditorState, LoadingKey } from "./types";
 
@@ -49,6 +50,11 @@ export const editorActions = {
   setPendingInlineImageInsertions: (value: number): EditorAction => ({
     type: "SET_PENDING_INLINE_IMAGE_INSERTIONS",
     payload: value,
+  }),
+
+  setUploadProgress: (progress: UploadProgress | undefined): EditorAction => ({
+    type: "SET_UPLOAD_PROGRESS",
+    payload: progress,
   }),
 
   setTimestamps: (timestamps: Partial<EditorState["timestamps"]>): EditorAction => ({

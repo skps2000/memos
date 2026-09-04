@@ -148,6 +148,24 @@
   background: var(--primary);
 }
 
+.cm-upload-anchor-rail-track {
+  background: color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+.cm-upload-anchor-rail-fill {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: height 150ms ease-out;
+}
+
+.cm-upload-anchor-percent {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
 .cm-upload-anchor-rail::after {
   position: absolute;
   top: 50%;
