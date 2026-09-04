@@ -7,7 +7,13 @@ import { Separator } from "@/components/ui/separator";
 import { useInstance } from "@/contexts/InstanceContext";
 import { useIdentityProviderList } from "@/hooks/useIdentityProviderQueries";
 import { ROUTES } from "@/router/routes";
-import { AUTH_REDIRECT_PARAM, appendSearchParams, getSafeRedirectPath } from "@/utils/auth-redirect";
+import {
+  AUTH_REASON_PARAM,
+  AUTH_REASON_PROTECTED_MEMO,
+  AUTH_REDIRECT_PARAM,
+  appendSearchParams,
+  getSafeRedirectPath,
+} from "@/utils/auth-redirect";
 import { useTranslate } from "@/utils/i18n";
 
 const SignIn = () => {
@@ -24,8 +30,13 @@ const SignIn = () => {
   // Shared by the subtitle and the body branch so they can't disagree.
   const showAuthOptions = identityProvidersLoading || passwordAuthAllowed || hasIdentityProviders;
 
+  // Arriving from a memo that needs a reader: say so, otherwise the sign-in page looks
+  // like an unexplained detour from the link the visitor clicked.
+  const cameFromProtectedMemo = searchParams.get(AUTH_REASON_PARAM) === AUTH_REASON_PROTECTED_MEMO;
+  const subtitle = cameFromProtectedMemo ? t("auth.protected-memo-notice") : t("auth.welcome-back");
+
   return (
-    <AuthPageLayout title={t("common.sign-in")} subtitle={showAuthOptions ? t("auth.welcome-back") : undefined}>
+    <AuthPageLayout title={t("common.sign-in")} subtitle={showAuthOptions ? subtitle : undefined}>
       {identityProvidersLoading ? (
         <AuthOptionsLoading />
       ) : showAuthOptions ? (
