@@ -1,6 +1,11 @@
 #!/bin/sh
-# Marklog 프로덕션 서버 1회 초기 설정 스크립트.
+# Marklog 프로덕션 서버에서 직접 빌드하고 싶을 때 쓰는 1회 초기 설정 스크립트.
 # 스왑 + Go 툴체인 + Node/pnpm 설치 후 저장소를 클론한다.
+#
+# 평소 배포에는 필요 없다. deploy.sh는 개발 머신에서 빌드한 바이너리를 올리므로
+# 서버에는 툴체인도 체크아웃도 없어도 된다. 8.7GB 디스크에 Go 캐시와 node_modules까지
+# 얹으면 금방 가득 차므로, 서버 빌드가 꼭 필요한 경우가 아니면 실행하지 말 것.
+#
 # 사용법 (서버에서 root로 실행):
 #   curl -fsSL https://raw.githubusercontent.com/skps2000/memos/main/scripts/server-setup.sh -o /tmp/server-setup.sh
 #   bash /tmp/server-setup.sh
@@ -58,5 +63,5 @@ else
 fi
 
 echo
-echo "설정 완료. 이제 배포 실행:"
-echo "  bash ${REPO_DIR}/scripts/deploy.sh"
+echo "설정 완료. 서버에서 빌드하려면 ${REPO_DIR} 에서 직접 pnpm release / go build 를 실행하세요."
+echo "평소 배포는 개발 머신에서: sh scripts/deploy.sh"
