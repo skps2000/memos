@@ -4,7 +4,23 @@
     "description": "개인정보 보호를 우선시하는 가벼운 노트 서비스입니다. 멋진 생각을 쉽게 기록하고 공유하세요.",
     "documents": "문서",
     "github-repository": "GitHub 저장소",
-    "official-website": "공식 웹사이트"
+    "official-website": "공식 웹사이트",
+    "api-docs": "API 문서",
+    "api-docs-note": "REST 및 gRPC 레퍼런스",
+    "build": "빌드",
+    "commit": "커밋",
+    "demo": "데모",
+    "distribution": "배포",
+    "documents-note": "Memos 설치·설정·사용 안내",
+    "github-repository-note": "소스, 이슈, 릴리스",
+    "license": "라이선스",
+    "media": "미디어",
+    "official-website-note": "프로젝트 홈페이지",
+    "powered-by": "Powered by Memos",
+    "project": "프로젝트",
+    "project-links": "프로젝트 링크",
+    "web-clipper": "웹 클리퍼",
+    "web-clipper-platforms": "Chrome + Firefox"
   },
   "auth": {
     "create-your-account": "계정 만들기",
@@ -13,7 +29,25 @@
     "protected-memo-notice": "공개된 메모가 아닙니다. 로그인하면 이어서 볼 수 있습니다.",
     "repeat-new-password": "새 비밀번호 재확인",
     "sign-in-tip": "이미 계정이 있으신가요?",
-    "sign-up-tip": "아직 계정이 없으신가요?"
+    "sign-up-tip": "아직 계정이 없으신가요?",
+    "admin-sign-in": "관리자 로그인",
+    "admin-sign-in-tip": "관리자는 비밀번호 로그인을 계속 사용할 수 있습니다.",
+    "back-to-sign-in": "로그인으로 돌아가기",
+    "continue-with": "{{provider}}(으)로 계속하기",
+    "create-admin-account": "관리자 계정 만들기",
+    "explore-public-memos": "이 인스턴스의 공개 메모 둘러보기",
+    "first-run": "최초 실행",
+    "setup-description": "이 인스턴스의 관리자 계정을 만듭니다.",
+    "setup-note": "이 계정이 인스턴스 설정, 구성원, 인증 공급자를 관리합니다.",
+    "setup-title": "인스턴스 설정하기",
+    "signin-unavailable-description": "비밀번호 로그인이 꺼져 있고 설정된 인증 공급자도 없습니다. 관리자에게 로그인 수단을 활성화해 달라고 요청하세요.",
+    "signin-unavailable-title": "로그인할 수 없습니다",
+    "signup-unavailable-description": "비밀번호 계정이 꺼져 있고 설정된 인증 공급자도 없습니다. 관리자에게 접근 권한을 요청하세요.",
+    "signup-unavailable-title": "가입할 수 없습니다",
+    "signups-closed-description": "이 인스턴스는 신규 계정 생성이 꺼져 있습니다. 접근이 필요하면 관리자에게 문의하세요.",
+    "signups-closed-title": "가입이 마감되었습니다",
+    "sso-signup-tip": "아래 공급자로 로그인하면 계정이 생성됩니다.",
+    "welcome-back": "다시 오신 것을 환영합니다."
   },
   "common": {
     "about": "정보",
@@ -115,7 +149,17 @@
     "version": "버전",
     "visibility": "공개 범위",
     "views": "보기",
-    "yourself": "자기 자신"
+    "yourself": "자기 자신",
+    "actions": "작업",
+    "author": "작성자",
+    "empty-placeholder": "비어 있음",
+    "location": "위치",
+    "month-navigation": "월 이동",
+    "next-month": "다음 달",
+    "previous-month": "이전 달",
+    "resize-sidebar": "사이드바 크기 조절",
+    "sign-in-to-memos": "Memos에 로그인",
+    "unlink": "연결 해제"
   },
   "locale-picker": {
     "no-language-feedback": "언어를 찾을 수 없나요? 피드백 제출"
@@ -131,7 +175,15 @@
     "insert-menu": {
       "add-location": "위치 추가",
       "link-memo": "링크 메모",
-      "upload-file": "파일 업로드"
+      "upload-file": "파일 업로드",
+      "add-attachment": "첨부 추가",
+      "image-upload-failed": "일부 이미지를 업로드하지 못했습니다. 다시 시도하거나 업로드된 파일을 첨부로 남겨 두세요.",
+      "image-upload-stopped": "이미지 업로드 중단됨 {{completed}}/{{total}}",
+      "insert-image": "이미지 삽입",
+      "keep-as-attachments": "첨부로 남기기",
+      "retry-image-upload": "다시 시도",
+      "uploading-inline-image": "본문에 업로드하는 중",
+      "uploading-images": "이미지 업로드 중 {{completed}}/{{total}}"
     },
     "upload-progress": {
       "label": "업로드 진행률",
@@ -161,8 +213,45 @@
       "title": "오디오 레코더",
       "trigger": "오디오 녹음",
       "unsupported": "오디오 녹음이 지원되지 않음",
-      "unsupported-description": "이 브라우저는 메모 작성기의 오디오를 녹음할 수 없습니다."
-    }
+      "unsupported-description": "이 브라우저는 메모 작성기의 오디오를 녹음할 수 없습니다.",
+      "configure-ai-provider": "먼저 AI 공급자를 설정하세요",
+      "transcribe": "받아쓰기",
+      "transcribe-empty": "음성이 감지되지 않았습니다",
+      "transcribe-error": "오디오를 받아쓰지 못했습니다",
+      "transcribe-success": "받아쓴 내용을 추가했습니다",
+      "transcribing": "받아쓰는 중…"
+    },
+    "formatting-toolbar": "서식 도구 모음",
+    "format": {
+      "heading": "제목",
+      "paragraph": "본문",
+      "heading-1": "제목 1",
+      "heading-2": "제목 2",
+      "heading-3": "제목 3",
+      "bold": "굵게",
+      "italic": "기울임",
+      "strikethrough": "취소선",
+      "code": "인라인 코드",
+      "code-block": "코드 블록",
+      "bullet-list": "글머리 기호 목록",
+      "ordered-list": "번호 매기기 목록",
+      "task-list": "할 일 목록",
+      "link": "링크",
+      "link-prompt": "URL을 입력하세요",
+      "more": "서식 더 보기"
+    },
+    "validation": {
+      "cannot-save": "저장할 수 없습니다",
+      "content-required": "본문, 첨부, 파일 중 하나는 있어야 합니다",
+      "finish-audio-recording": "저장하기 전에 오디오 녹음을 끝내세요",
+      "loading-content": "메모 내용을 불러오는 중",
+      "resolve-image-uploads": "저장하기 전에 이미지 업로드를 정리하세요",
+      "save-in-progress": "저장하는 중",
+      "unsupported-attachment-image-url": "지원하지 않는 첨부 이미지 URL: {{url}}",
+      "wait-for-upload": "업로드가 끝날 때까지 기다리세요"
+    },
+    "unsupported-syntax-raw-mode": "이 메모에는 서식 편집기가 안전하게 다룰 수 없는 문법이 있어 원본 마크다운 모드로 열었습니다.",
+    "wysiwyg-editor": "서식 편집기"
   },
   "inbox": {
     "failed-to-load": "알림함 항목을 불러오지 못했습니다",
@@ -217,7 +306,10 @@
       "disabled": "공개 메모는 비활성화됨",
       "private": "나만 볼 수 있음",
       "protected": "멤버 전용",
-      "public": "공개"
+      "public": "공개",
+      "private-description": "나만 볼 수 있음",
+      "protected-description": "로그인한 사용자만 볼 수 있음",
+      "public-description": "누구나 볼 수 있음"
     },
     "outline": "개요",
     "resize-card": "메모 카드 크기 조절",
@@ -272,7 +364,28 @@
       "share": "공유",
       "shared-by": "{{creator}}님이 공유함",
       "title": "이 메모를 공유하세요"
-    }
+    },
+    "count-memos-updated-in-date": "{{date}}에 {{count}}개의 {{memos}}이(가) 수정되었습니다",
+    "grid-compact-hint": "격자 배치는 항상 간결한 카드를 사용합니다.",
+    "layout": "배치",
+    "layout-auto": "자동",
+    "layout-auto-description": "화면에 맞는 만큼 열을 채웁니다",
+    "layout-columns": "{{n}}열",
+    "layout-columns-description": "너비가 허용하면 최대 {{n}}열까지",
+    "layout-list": "목록",
+    "layout-list-description": "읽기 좋은 너비의 한 열",
+    "new-badge": "새로움",
+    "newest-first": "최신순",
+    "oldest-first": "오래된순",
+    "order": "정렬",
+    "shown-time": "표시 시각",
+    "task-actions": {
+      "check-all": "모든 할 일 체크",
+      "title": "할 일",
+      "uncheck-all": "모든 할 일 체크 해제",
+      "updated": "할 일을 갱신했습니다"
+    },
+    "view-options": "보기 옵션"
   },
   "message": {
     "archived-successfully": "성공적으로 보관되었습니다",
@@ -359,7 +472,11 @@
       "user": "사용자",
       "label": "멤버",
       "list-title": "멤버 목록",
-      "no-members-found": "회원을 찾을 수 없습니다."
+      "no-members-found": "회원을 찾을 수 없습니다.",
+      "active": "활성",
+      "archived": "보관됨",
+      "member-column": "구성원",
+      "summary-column": "요약"
     },
     "my-account": {
       "label": "내 계정"
@@ -368,7 +485,18 @@
       "default-memo-sort-option": "메모에 표시할 시각",
       "default-memo-visibility": "메모 공개 범위 기본값",
       "theme": "테마",
-      "label": "개인 설정"
+      "label": "개인 설정",
+      "appearance-description": "내 계정에서 앱의 모양과 사용할 언어를 정합니다.",
+      "appearance-title": "화면",
+      "default-memo-visibility-description": "편집기에서 바꾸지 않는 한 새 메모에 적용되는 공개 범위입니다.",
+      "language-description": "인터페이스 언어를 즉시 바꾸고 계정에 저장합니다.",
+      "memo-defaults-description": "새 메모를 작성할 때 쓰는 기본값을 정합니다.",
+      "memo-defaults-title": "메모 기본값",
+      "save-media-metadata": "미디어 메타데이터 저장",
+      "save-media-metadata-description": "앞으로 업로드하는 파일에 카메라, 촬영 시각, 위치, 이미지 크기, 기본 영상 정보를 함께 저장합니다. 첨부를 볼 수 있는 사람은 이 정보도 함께 받게 됩니다. 이미 올린 첨부는 바뀌지 않습니다.",
+      "theme-description": "선택한 테마를 이 기기에 즉시 적용합니다.",
+      "uploads-privacy-description": "업로드하는 미디어에 함께 담기는 개인정보성 정보를 관리합니다.",
+      "uploads-privacy-title": "업로드와 개인정보"
     },
     "memo-view": {
       "delete-confirm": "보기 `{{title}}`를 정말로 삭제하시겠습니까?",
@@ -397,7 +525,47 @@
       "token-endpoint": "토큰 엔드포인트",
       "update-sso": "SSO 수정",
       "user-endpoint": "유저 엔드포인트",
-      "label": "SSO"
+      "label": "SSO",
+      "account": "계정",
+      "accounts-description": "각 인증 공급자의 연결 상태를 확인하고, 이 계정에 외부 신원을 연결하거나 해제합니다.",
+      "accounts-title": "SSO 계정",
+      "avatar-url": "아바타 URL",
+      "basic-settings": "기본 설정",
+      "basic-settings-description": "OAuth 세부 정보를 채우기 전에 공급자 식별자, 표시 이름, 선택적 식별자 규칙을 정합니다.",
+      "client-secret-optional-description": "비워 두면 기존 클라이언트 시크릿이 유지됩니다.",
+      "configuration": "설정",
+      "configuration-summary-description": "전체 설정을 그대로 드러내지 않으면서 공급자를 식별하고 점검하는 데 필요한 핵심만 보여 줍니다.",
+      "create-sso-description": "관리자가 관리하는 싱글 사인온용 인증 공급자를 새로 만듭니다.",
+      "endpoints": "엔드포인트",
+      "extern-uid": "외부 ID",
+      "extern-uid-description": "현재 내 계정에 연결된 공급자 측 신원입니다.",
+      "filter-disabled": "사용 안 함",
+      "identifier-filter-description": "어떤 외부 식별자가 로그인할 수 있는지 허용하거나 제한하는 선택적 정규식입니다.",
+      "field-mapping": "클레임 매핑",
+      "field-mapping-description": "사용자를 식별하고 프로필을 채우는 데 쓸 상위 프로필 필드를 연결합니다.",
+      "field-mapping-identifier-description": "로그인하거나 계정을 연결할 때 변하지 않는 외부 식별자로 사용됩니다.",
+      "linked": "연결됨",
+      "mapping": "매핑",
+      "mapping-avatar-short": "아바타",
+      "mapping-display-name-short": "이름",
+      "mapping-email-short": "이메일",
+      "mapping-identifier-short": "ID",
+      "mapping-none": "설정 안 됨",
+      "not-linked": "연결 안 됨",
+      "not-linked-description": "아직 연결된 외부 신원이 없습니다. 이 공급자를 연결해 두면 나중에 그것으로 로그인할 수 있습니다.",
+      "oauth-configuration": "OAuth 설정",
+      "oauth-configuration-description": "로그인 과정에 쓰이는 OAuth 클라이언트 자격증명과 공급자 엔드포인트를 입력합니다.",
+      "provider": "공급자",
+      "provider-id": "공급자 ID",
+      "provider-id-description": "소문자, 숫자, 하이픈만 쓸 수 있습니다. 이 값이 공급자 리소스 이름의 일부가 됩니다.",
+      "provider-uid": "UID",
+      "redirect-url-description": "인증 코드 흐름이 완료되도록 이 콜백 URL을 인증 공급자에 등록하세요.",
+      "scope-count_one": "스코프 {{count}}개",
+      "scope-count_other": "스코프 {{count}}개",
+      "scopes-description": "스코프는 공백으로 구분합니다. 대부분의 공급자는 프로필이나 이메일 정도의 작은 집합이면 충분합니다.",
+      "template-description": "공급자 프리셋에서 시작한 뒤, 자격증명과 엔드포인트를 내 테넌트에 맞게 조정하세요.",
+      "unlink-success": "{{name}} 연결을 해제했습니다.",
+      "update-sso-description": "공급자 설정을 확인한 뒤 바꿀 항목만 저장하세요."
     },
     "storage": {
       "accesskey": "액세스 키",
@@ -431,7 +599,34 @@
       "url-suffix": "URL 접미사",
       "url-suffix-placeholder": "URL 뒤에 붙을 커스텀 접미사, 선택 사항",
       "warning-text": "저장소 서비스 \"{{name}}\"을(를) 삭제하시겠습니까? 이 행동은 되돌릴 수 없습니다",
-      "label": "저장소"
+      "label": "저장소",
+      "accesskey-description": "버킷 또는 S3 호환 서비스의 액세스 키 ID입니다.",
+      "badge-default": "기본값",
+      "badge-recommended": "권장",
+      "bucket-description": "새 첨부 객체가 저장될 버킷입니다.",
+      "current-storage-description": "새 첨부를 어디에 저장할지 정합니다. 이미 저장된 첨부는 원래 위치에 그대로 남습니다.",
+      "database-description": "첨부 파일을 애플리케이션 데이터베이스에 직접 저장합니다.",
+      "database-note-backup": "작은 인스턴스라면 메모와 함께 백업하기 간편합니다.",
+      "database-note-size": "첨부가 많거나 크면 데이터베이스가 빠르게 커질 수 있습니다.",
+      "endpoint-description": "AWS S3, Cloudflare R2, MinIO 등 호환 서비스의 엔드포인트 URL입니다.",
+      "filepath-template-description": "로컬 및 S3 저장소에서 사용합니다. {timestamp}, {uuid}, {filename}을 쓸 수 있습니다. 기본값: assets/{timestamp}_{uuid}_{filename}.",
+      "insecure-skip-tls-verify": "TLS 검증 건너뛰기",
+      "insecure-skip-tls-verify-description": "S3 엔드포인트의 TLS 인증서 검증을 끕니다. 자체 서명 인증서를 쓰는 신뢰할 수 있는 엔드포인트에만 사용하세요. 중간자 공격에 대한 보호가 사라집니다.",
+      "local-description": "새 첨부를 서버 파일 시스템에 저장합니다. 새 인스턴스의 기본값입니다.",
+      "local-note-backup": "특히 Docker나 컨테이너 환경에서는 첨부 디렉터리를 유지하고 백업하세요.",
+      "local-note-path": "상대 경로는 인스턴스 데이터 디렉터리 아래에 기록됩니다.",
+      "region-description": "공급자가 요구하는 리전입니다. 일부 호환 서비스는 형식만 맞으면 어떤 값이든 받습니다.",
+      "s3-configuration": "S3 설정",
+      "s3-configuration-description": "새 첨부를 저장할 S3 호환 버킷을 설정합니다.",
+      "s3-description": "새 첨부를 S3 호환 오브젝트 스토리지에 저장합니다.",
+      "s3-note-config": "유효한 엔드포인트, 리전, 버킷, 자격증명, 권한과 서버의 네트워크 접근이 필요합니다.",
+      "s3-note-scale": "첨부가 많거나, 클라우드 배포이거나, 여러 인스턴스를 운영할 때 적합합니다.",
+      "secretkey-description": "버킷 또는 S3 호환 서비스의 시크릿 액세스 키입니다.",
+      "secretkey-preserve-description": "비워 두면 기존 시크릿 키가 유지됩니다.",
+      "selected-backend": "선택됨",
+      "type-s3": "S3 호환 스토리지",
+      "use-path-style": "경로 방식 URL 사용",
+      "use-path-style-description": "MinIO처럼 가상 호스트 방식 버킷을 지원하지 않는 S3 호환 서비스에서 켜세요."
     },
     "system": {
       "additional-script": "추가 스크립트",
@@ -458,7 +653,12 @@
       "removed-completed-task-list-items": "완료된 할 일 삭제 활성화",
       "server-name": "서버 이름",
       "title": "일반",
-      "label": "시스템"
+      "label": "시스템",
+      "additional-script-description": "모든 웹 페이지에 JavaScript를 삽입합니다. 신뢰할 수 있는 코드만 사용하세요.",
+      "additional-style-description": "웹 앱에 CSS를 삽입해 인스턴스 전체의 표시를 조정합니다.",
+      "basic-description": "이 인스턴스가 외부에 보여 주는 정보를 설정합니다.",
+      "custom-code-description": "프런트엔드에 적용되는 인스턴스 전체 CSS와 JavaScript입니다. 선택 사항입니다.",
+      "custom-code-title": "사용자 지정 코드"
     },
     "version": "버전",
     "access-token": {
@@ -476,12 +676,28 @@
         "duration-never": "영구",
         "expiration": "만료",
         "expires-at": "만료일",
-        "some-description": "설명..."
+        "some-description": "설명...",
+        "duration-90d": "90일"
       },
       "description": "계정의 모든 액세스 토큰 목록입니다.",
       "title": "액세스 토큰",
       "token": "토큰",
-      "no-tokens-found": "액세스 토큰을 찾을 수 없습니다."
+      "no-tokens-found": "액세스 토큰을 찾을 수 없습니다.",
+      "create-first": "첫 토큰 만들기",
+      "about-description": "개인용 액세스 토큰(PAT)은 API 요청을 내 계정으로 인증하는 비밀 키입니다. 토큰을 가진 앱이나 스크립트는 — MCP 서버, CLI, 모바일 클라이언트 무엇이든 — 토큰이 만료되거나 삭제될 때까지 내가 Memos에서 할 수 있는 모든 일을 할 수 있습니다. Authorization 헤더에 Bearer 자격증명으로 보내세요:",
+      "empty-description": "토큰이 있으면 스크립트나 앱이 내 자격으로 API를 호출할 수 있습니다. 토큰 값은 생성 직후 한 번만 표시되고, 이후에는 여기에 목록으로만 남아 폐기할 수 있습니다.",
+      "empty-title": "아직 액세스 토큰이 없습니다",
+      "expires": "만료",
+      "guideline-shown-once": "토큰 값은 만든 직후 딱 한 번만 표시됩니다(클립보드에도 복사됩니다). 비밀번호 관리자처럼 안전한 곳에 보관하세요.",
+      "guideline-one-per-app": "앱이나 스크립트마다 별도의 토큰을 만드세요. 하나를 폐기해도 나머지가 멈추지 않습니다.",
+      "guideline-expiration": "만료가 있는 토큰을 쓰세요. 오래 사는 토큰은 유출됐을 때 위험이 훨씬 큽니다.",
+      "guideline-review": "마지막 사용 시각을 가끔 확인하고, 알아볼 수 없거나 더 이상 필요 없는 토큰은 삭제하세요.",
+      "how-to-use": "토큰 사용 방법",
+      "label": "액세스 토큰",
+      "last-used": "마지막 사용",
+      "never-used": "사용된 적 없음",
+      "no-expiration": "만료 없음",
+      "web-clipper-title": "Memos 웹 클리퍼에서 토큰 쓰기"
     },
     "account": {
       "change-password": "비밀번호 변경",
@@ -494,7 +710,11 @@
       "reset-api": "API 초기화",
       "title": "계정 정보",
       "update-information": "정보 변경",
-      "username-note": "로그인하는 데 사용됨"
+      "username-note": "로그인하는 데 사용됨",
+      "danger-area": "위험 구역",
+      "danger-area-description": "되돌릴 수 없는 계정 작업입니다. 진행하기 전에 신중히 확인하세요.",
+      "delete-account": "계정 삭제",
+      "delete-account-description": "이 인스턴스에서 계정과 관련 접근 권한을 영구히 삭제합니다. 되돌릴 수 없습니다."
     },
     "instance": {
       "disallow-change-nickname": "닉네임 변경 금지",
@@ -504,7 +724,14 @@
       "monday": "월요일",
       "saturday": "토요일",
       "sunday": "일요일",
-      "week-start-day": "주 시작 요일"
+      "week-start-day": "주 시작 요일",
+      "access-description": "이 인스턴스의 가입, 인증, 프로필 수정, 달력 기본값을 설정합니다.",
+      "access-title": "접근 및 정책",
+      "disallow-change-nickname-description": "사용자가 표시 이름을 바꾸지 못하게 합니다.",
+      "disallow-change-username-description": "사용자가 로그인 아이디를 바꾸지 못하게 합니다.",
+      "disallow-password-auth-description": "비밀번호 로그인 대신 인증 공급자로만 로그인하게 합니다.",
+      "disallow-user-registration-description": "가입 페이지에서 새 계정을 만들지 못하게 합니다.",
+      "week-start-day-description": "달력 형태의 화면에서 한 주의 첫 요일을 정합니다."
     },
     "memo": {
       "content-length-limit": "내용 길이 제한 (바이트)",
@@ -514,7 +741,17 @@
       "reactions": "반응",
       "title": "메모 관련 설정",
       "label": "메모",
-      "reactions-required": "반응 목록은 비워둘 수 없습니다."
+      "reactions-required": "반응 목록은 비워둘 수 없습니다.",
+      "add-reaction": "반응 추가",
+      "bytes-unit": "바이트",
+      "configured-reactions": "설정된 반응",
+      "content-length-limit-description": "서버가 허용하는 메모 본문의 최대 크기입니다.",
+      "double-click-edit-description": "메모를 더블클릭하면 편집이 열리도록 허용합니다.",
+      "editing-description": "메모 편집 동작과 서버 측 본문 제한을 설정합니다.",
+      "editing-title": "편집",
+      "reaction-placeholder": "예: 👍",
+      "reactions-description": "사용자가 메모에 남길 수 있는 반응 목록을 정합니다.",
+      "remove-reaction": "반응 삭제"
     },
     "webhook": {
       "create-dialog": {
@@ -524,7 +761,15 @@
         "edit-webhook": "Webhook 편집",
         "payload-url": "페이로드 URL",
         "title": "제목",
-        "url-example-post-receive": "https://example.com/postreceive"
+        "url-example-post-receive": "https://example.com/postreceive",
+        "copy-secret": "서명 시크릿 복사",
+        "generate-secret": "생성",
+        "reveal-secret": "값 보기",
+        "signing-secret": "서명 시크릿",
+        "signing-secret-auto-note": "서명 시크릿은 자동으로 만들어집니다. 만든 뒤에 값을 확인할 수 있습니다.",
+        "signing-secret-configured": "설정됨",
+        "signing-secret-created-note": "웹훅을 만들었습니다. 지금 서명 시크릿을 복사하세요. 나중에 수정 화면에서도 확인할 수 있습니다.",
+        "signing-secret-not-configured": "설정 안 됨"
       },
       "delete-dialog": {
         "delete-webhook-description": "이 작업은 되돌릴 수 없습니다.",
@@ -548,7 +793,110 @@
       "tag-already-exists": "태그가 이미 존재합니다.",
       "tag-pattern-hint": "태그 이름 또는 정규식 패턴(예: project/.*는 모든 project/ 태그와 일치함)",
       "invalid-regex": "유효하지 않거나 안전하지 않은 정규식 패턴입니다.",
-      "using-default-color": "기본 색상을 사용합니다."
+      "using-default-color": "기본 색상을 사용합니다.",
+      "add-rule": "규칙 추가",
+      "configured-rules": "설정된 규칙",
+      "default-color": "기본",
+      "matching-rule": "전체 일치 정규식",
+      "used-count": "메모 {{count}}개"
+    },
+    "ai": {
+      "add-provider": "공급자 추가",
+      "api-key": "API 키",
+      "api-key-required": "API 키는 필수입니다.",
+      "byok-description": "내 계정에서 발급한 API 키로 OpenAI 또는 Gemini를 연결합니다. Memos는 이 서버에서 공급자를 직접 호출합니다.",
+      "byok-key-note": "공급자 계정에서 발급한 키를 사용하세요. Memos는 공용 AI 자격증명을 제공하지 않습니다.",
+      "byok-label": "BYOK",
+      "byok-model-note": "오디오 받아쓰기 같은 기능에는 Memos가 지원되는 모델을 선택합니다.",
+      "byok-storage-note": "키는 이 인스턴스에만 저장되며 설정을 불러올 때는 가려집니다.",
+      "byok-title": "내 AI 계정 사용하기",
+      "configured": "설정됨",
+      "current-key": "현재 키: {{key}}",
+      "default-endpoint": "기본 엔드포인트",
+      "delete-provider": "AI 공급자 `{{title}}`을(를) 삭제할까요?",
+      "description": "공급자 키는 인스턴스 운영자가 제공하며 서버 측 AI 기능에 사용됩니다.",
+      "dialog-description": "내 공급자 계정의 키를 추가하세요. Memos는 공급자별 기본 모델을 사용합니다. 수정할 때 API 키를 비워 두면 저장된 키가 유지됩니다.",
+      "edit-provider": "공급자 수정",
+      "endpoint": "엔드포인트",
+      "endpoint-hint": "비워 두면 공급자의 공식 엔드포인트를 사용합니다.",
+      "integrations-description": "공급자 키는 인스턴스 운영자가 제공하며 서버 측 AI 기능에 사용됩니다.",
+      "integrations-title": "AI 연동",
+      "keep-api-key": "기존 키를 유지하려면 비워 두세요",
+      "label": "AI",
+      "no-providers": "설정된 AI 공급자가 없습니다.",
+      "provider-title": "공급자 이름",
+      "provider-title-required": "공급자 이름은 필수입니다.",
+      "provider-type": "공급자 종류",
+      "providers": "공급자",
+      "transcription-description": "메모 작성 중 오디오를 녹음할 때 쓰는 음성 인식 설정입니다.",
+      "transcription-empty-providers": "받아쓰기를 쓰려면 먼저 AI 연동을 추가하세요.",
+      "transcription-language-help": "ISO 639-1 두 글자 코드(예: ko, en, ja). 비워 두면 자동으로 감지합니다.",
+      "transcription-language-placeholder": "자동 감지",
+      "transcription-language": "기본 언어",
+      "transcription-model-help": "자유 입력입니다. 공급자의 모델 식별자를 쓰세요 — 예: whisper-1, gpt-4o-transcribe, whisper-large-v3-turbo.",
+      "transcription-model-placeholder-gemini": "gemini-2.5-flash, gemini-2.5-pro",
+      "transcription-model-placeholder-openai": "whisper-1, gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-transcribe-diarize",
+      "transcription-model": "모델",
+      "transcription-no-provider": "없음 — 받아쓰기 사용 안 함",
+      "transcription-prompt-help": "고유명사와 전문 용어의 표기를 개선합니다. OpenAI Whisper는 이를 참고용 힌트로 다루며(대략 224토큰까지), Gemini는 생성 프롬프트 안의 지시문으로 그대로 반영합니다.",
+      "transcription-prompt-placeholder": "이름: 홍길동, 김철수. 용어: kubernetes, OAuth.",
+      "transcription-prompt": "프롬프트 힌트",
+      "transcription-provider": "공급자",
+      "transcription-title": "받아쓰기",
+      "transcription-warning-no-key": "선택한 공급자에 API 키가 없습니다. 위에서 연동을 수정해 키를 추가하세요."
+    },
+    "notification": {
+      "email-description": "메모 댓글과 멘션을 이메일로도 보냅니다. Gmail은 smtp.gmail.com, 587 포트, STARTTLS, 앱 비밀번호 조합으로 동작합니다.",
+      "email-enabled": "이메일 알림 사용",
+      "email-enabled-description": "앱 내 알림함에 더해 이메일이 발송됩니다. 사용자에게 켜 주기 전에 필수 항목을 모두 채우세요.",
+      "email-title": "이메일 발송",
+      "from-email": "보내는 주소",
+      "from-email-description": "알림 메일에 표시되는 발신 주소입니다. Gmail이라면 SMTP 사용자명과 같은 계정을 쓰세요.",
+      "from-name": "보내는 이름",
+      "from-name-description": "발신 주소 옆에 표시되는 이름입니다. 비워 두면 주소만 표시됩니다.",
+      "label": "알림",
+      "reply-to": "회신 주소",
+      "reply-to-description": "알림 메일에 답장할 주소입니다. 비워 두면 보내는 주소로 답장이 옵니다.",
+      "requirement-gmail": "Gmail 필수",
+      "requirement-optional": "선택",
+      "requirement-recommended": "권장",
+      "requirement-required": "필수",
+      "smtp-host": "SMTP 호스트",
+      "smtp-host-description": "SMTP 서버 호스트명입니다. Gmail은 smtp.gmail.com을 쓰세요.",
+      "smtp-password": "SMTP 비밀번호",
+      "smtp-password-description": "SMTP 비밀번호 또는 앱 전용 토큰입니다. Gmail은 일반 계정 비밀번호가 아니라 Google 앱 비밀번호가 필요합니다.",
+      "smtp-password-placeholder-existing": "현재 비밀번호를 유지하려면 비워 두세요",
+      "smtp-password-preserve-description": "비워 두면 기존 SMTP 비밀번호가 유지됩니다. 자격증명을 교체할 때만 새 앱 비밀번호를 입력하세요.",
+      "smtp-port": "SMTP 포트",
+      "smtp-port-description": "Gmail을 비롯한 대부분의 공급자는 587 포트와 STARTTLS를 씁니다. 465는 SSL/TLS를 켤 때만 사용하세요.",
+      "smtp-username": "SMTP 사용자명",
+      "smtp-username-description": "인증에 쓰는 사용자명입니다. Gmail은 전체 Gmail 주소가 필요합니다.",
+      "test-email": "테스트 메일 보내기",
+      "test-email-missing-recipient": "테스트 메일을 보내려면 먼저 계정에 이메일 주소를 설정하세요.",
+      "test-email-sending": "테스트 메일을 보내는 중…",
+      "test-email-success": "{{email}}(으)로 테스트 메일을 보냈습니다.",
+      "use-ssl": "SSL/TLS 사용",
+      "use-ssl-description": "보통 465 포트와 함께 쓰는 암시적 TLS입니다. 587 포트에서 STARTTLS를 쓸 때는 꺼 두세요.",
+      "use-tls": "STARTTLS 사용",
+      "use-tls-description": "STARTTLS로 SMTP 연결을 암호화합니다. 587 포트의 Gmail이라면 켜 두세요."
+    },
+    "resource-stats": {
+      "label": "리소스",
+      "title": "리소스 통계",
+      "description": "이 인스턴스의 리소스 사용량입니다.",
+      "database": {
+        "title": "데이터베이스",
+        "driver": "드라이버",
+        "size": "크기"
+      },
+      "local-storage": {
+        "title": "로컬 스토리지",
+        "size": "데이터 디렉터리 크기"
+      },
+      "unknown": "알 수 없음",
+      "last-updated": "{{ago}} 갱신됨",
+      "refresh": "새로 고침",
+      "load-error": "통계를 불러오지 못했습니다"
     }
   },
   "telegram": {
@@ -614,5 +962,76 @@
     "connected": "실시간 업데이트 활성화",
     "connecting": "실시간 업데이트에 연결 중...",
     "disconnected": "실시간 업데이트를 사용할 수 없습니다"
+  },
+  "demo": {
+    "banner-description": "마음껏 둘러보세요. 이 데모는 주기적으로 초기화됩니다.",
+    "banner-title": "Memos 데모",
+    "deploy-link": "직접 Memos 설치하기"
+  },
+  "attachment-details": {
+    "actions": {
+      "copied": "좌표를 복사했습니다",
+      "copy-coordinates": "좌표 복사",
+      "hide": "첨부 정보 숨기기",
+      "hide-map": "지도 숨기기",
+      "show": "첨부 정보 보기",
+      "show-map": "지도 보기"
+    },
+    "empty": "저장된 촬영 정보가 없습니다.",
+    "fields": {
+      "altitude": "고도",
+      "camera": "카메라",
+      "captured": "촬영 시각",
+      "dimensions": "크기",
+      "duration": "재생 시간",
+      "exposure": "노출",
+      "file": "파일",
+      "lens": "렌즈",
+      "location": "좌표",
+      "source-orientation": "원본 EXIF 방향",
+      "uploaded": "업로드 시각"
+    },
+    "sections": {
+      "camera": "카메라",
+      "capture": "촬영",
+      "file": "파일",
+      "location": "위치",
+      "technical": "기술 정보"
+    },
+    "timezone-unknown": "시간대 알 수 없음",
+    "title": "상세 정보"
+  },
+  "attachment-library": {
+    "actions": {
+      "open": "열기",
+      "retry": "다시 시도"
+    },
+    "empty": {
+      "all": "아직 첨부 파일이 없습니다.",
+      "audio": "아직 오디오 첨부가 없습니다.",
+      "documents": "아직 문서 첨부가 없습니다.",
+      "media": "아직 미디어 첨부가 없습니다."
+    },
+    "errors": {
+      "load": "첨부 파일을 불러오지 못했습니다."
+    },
+    "labels": {
+      "live": "라이브",
+      "live-photo": "라이브 포토",
+      "memo": "메모",
+      "not-linked": "연결 안 됨",
+      "unknown-date": "날짜 알 수 없음",
+      "unused": "미사용"
+    },
+    "tabs": {
+      "audio": "오디오",
+      "documents": "문서",
+      "media": "미디어"
+    },
+    "unused": {
+      "confirm-description": "메모에 연결되지 않은 업로드 파일을 모두 삭제합니다.",
+      "description": "메모에 한 번도 첨부되지 않은 업로드 파일입니다. 여기서 확인하거나 삭제하세요.",
+      "title": "연결되지 않은 업로드"
+    }
   }
 }
