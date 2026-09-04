@@ -4,10 +4,11 @@ import toast from "react-hot-toast";
 import TelegramSetupDialog from "@/components/TelegramSetupDialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTelegramConfig } from "@/hooks/useTelegramConfig";
 import type { Attachment } from "@/types/proto/api/v1/attachment_service_pb";
 import { getAttachmentUrl } from "@/utils/attachment";
 import { useTranslate } from "@/utils/i18n";
-import { loadTelegramConfig, sendTelegramMemo, TelegramApiError, type TelegramConfig } from "@/utils/telegram";
+import { sendTelegramMemo, TelegramApiError, type TelegramConfig } from "@/utils/telegram";
 
 const SENT_FEEDBACK_DURATION = 1500;
 const RESULT_TOAST_DURATION = 6000;
@@ -19,10 +20,11 @@ interface MemoTelegramButtonProps {
 
 /**
  * Sends the raw memo content and its attachments to the user's Telegram chat in one click.
- * The bot token and chat id are asked for once and then kept in localStorage.
+ * The bot token and chat id are asked for once and then kept in the user's account setting.
  */
 const MemoTelegramButton: React.FC<MemoTelegramButtonProps> = ({ content, attachments }) => {
   const t = useTranslate();
+  const { config } = useTelegramConfig();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
@@ -80,14 +82,13 @@ const MemoTelegramButton: React.FC<MemoTelegramButtonProps> = ({ content, attach
   );
 
   const handleClick = useCallback(() => {
-    const config = loadTelegramConfig();
     if (!config) {
       setSetupError(undefined);
       setSetupOpen(true);
       return;
     }
     void send(config);
-  }, [send]);
+  }, [config, send]);
 
   const icon = sending ? (
     <Loader2Icon className="animate-spin text-muted-foreground" />

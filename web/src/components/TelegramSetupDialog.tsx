@@ -5,40 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTelegramConfig } from "@/hooks/useTelegramConfig";
+import { handleError } from "@/lib/error";
 import { useTranslate } from "@/utils/i18n";
-import {
-  discoverChatId,
-  isValidBotToken,
-  isValidChatId,
-  loadTelegramConfig,
-  saveTelegramConfig,
-  type TelegramConfig,
-} from "@/utils/telegram";
+import { discoverChatId, isValidBotToken, isValidChatId, type TelegramConfig } from "@/utils/telegram";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Shown above the form, e.g. why the previous send failed. */
   errorMessage?: string;
-  /** Called after the config has been saved. */
+  /** Called after the config has been saved to the account. */
   onSaved?: (config: TelegramConfig) => void;
 }
 
 /**
- * Asks once for a Telegram bot token and chat id, stores them in localStorage,
- * and explains how to obtain both.
+ * Asks once for a Telegram bot token and chat id, stores them in the user's account
+ * setting (so every browser signed in to the account has them), and explains how to obtain both.
  */
 function TelegramSetupDialog({ open, onOpenChange, errorMessage, onSaved }: Props) {
   const t = useTranslate();
+  const { config: existing, save, isSaving } = useTelegramConfig();
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
   const [discovering, setDiscovering] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    const existing = loadTelegramConfig();
     setBotToken(existing?.botToken ?? "");
     setChatId(existing?.chatId ?? "");
+    // Only reset the form when the dialog opens; later setting refreshes must not clobber typing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleDiscoverChatId = async () => {
@@ -62,7 +59,7 @@ function TelegramSetupDialog({ open, onOpenChange, errorMessage, onSaved }: Prop
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isValidBotToken(botToken)) {
       toast.error(t("telegram.invalid-token"));
       return;
@@ -72,7 +69,12 @@ function TelegramSetupDialog({ open, onOpenChange, errorMessage, onSaved }: Prop
       return;
     }
     const config = { botToken: botToken.trim(), chatId: chatId.trim() };
-    saveTelegramConfig(config);
+    try {
+      await save(config);
+    } catch (error) {
+      await handleError(error, toast.error, { context: "Save Telegram settings" });
+      return;
+    }
     toast.success(t("telegram.saved"));
     onOpenChange(false);
     onSaved?.(config);
@@ -139,7 +141,9 @@ function TelegramSetupDialog({ open, onOpenChange, errorMessage, onSaved }: Prop
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSave}>{t("common.save")}</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {t("common.save")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

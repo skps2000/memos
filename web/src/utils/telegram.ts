@@ -34,6 +34,18 @@ const CHAT_ID_PATTERN = /^-?\d+$|^@[A-Za-z0-9_]{5,}$/;
 export const isValidBotToken = (token: string): boolean => BOT_TOKEN_PATTERN.test(token.trim());
 export const isValidChatId = (chatId: string): boolean => CHAT_ID_PATTERN.test(chatId.trim());
 
+/** Reads the Telegram config from the user's server-side general setting. */
+export const getTelegramConfigFromSetting = (
+  setting: { telegramBotToken?: string; telegramChatId?: string } | undefined,
+): TelegramConfig | null => {
+  if (!setting?.telegramBotToken || !setting?.telegramChatId) return null;
+  return { botToken: setting.telegramBotToken, chatId: setting.telegramChatId };
+};
+
+/**
+ * Legacy per-browser storage. Config now lives in the user's account setting; this
+ * remains only so an existing browser value can be migrated to the account once.
+ */
 export const loadTelegramConfig = (): TelegramConfig | null => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -45,14 +57,6 @@ export const loadTelegramConfig = (): TelegramConfig | null => {
   } catch (error) {
     console.warn("Failed to load Telegram config from localStorage:", error);
     return null;
-  }
-};
-
-export const saveTelegramConfig = (config: TelegramConfig): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ botToken: config.botToken.trim(), chatId: config.chatId.trim() }));
-  } catch (error) {
-    console.warn("Failed to save Telegram config to localStorage:", error);
   }
 };
 

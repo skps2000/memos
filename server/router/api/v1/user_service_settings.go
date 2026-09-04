@@ -110,6 +110,10 @@ func (s *APIV1Service) UpdateUserSetting(ctx context.Context, request *v1pb.Upda
 				updatedGeneral.Locale = incomingGeneral.Locale
 			case "save_media_metadata":
 				updatedGeneral.SaveMediaMetadata = incomingGeneral.SaveMediaMetadata
+			case "telegram_bot_token":
+				updatedGeneral.TelegramBotToken = incomingGeneral.TelegramBotToken
+			case "telegram_chat_id":
+				updatedGeneral.TelegramChatId = incomingGeneral.TelegramChatId
 			default:
 				// Ignore unsupported fields.
 			}

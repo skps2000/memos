@@ -191,6 +191,8 @@ func convertUserSettingFromStore(storeSetting *storepb.UserSetting, user *store.
 					MemoVisibility:    general.MemoVisibility,
 					Theme:             general.Theme,
 					SaveMediaMetadata: general.SaveMediaMetadata,
+					TelegramBotToken:  general.TelegramBotToken,
+					TelegramChatId:    general.TelegramChatId,
 				},
 			}
 		} else {
@@ -245,6 +247,8 @@ func convertUserSettingToStore(apiSetting *v1pb.UserSetting, userID int32, key s
 					MemoVisibility:    general.MemoVisibility,
 					Theme:             general.Theme,
 					SaveMediaMetadata: general.SaveMediaMetadata,
+					TelegramBotToken:  general.TelegramBotToken,
+					TelegramChatId:    general.TelegramChatId,
 				},
 			}
 		} else {

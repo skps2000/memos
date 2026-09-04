@@ -47,6 +47,10 @@ message GeneralUserSetting {
   string theme = 3;
   // Whether the official client should save metadata from future media uploads.
   bool save_media_metadata = 4;
+  // Telegram bot token used by the "send to Telegram" feature.
+  string telegram_bot_token = 5;
+  // Telegram chat id that memos are sent to.
+  string telegram_chat_id = 6;
 }
 
 message UserTagMetadata {

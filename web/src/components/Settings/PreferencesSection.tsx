@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTelegramConfig } from "@/hooks/useTelegramConfig";
 import { useUpdateUserGeneralSetting } from "@/hooks/useUserQueries";
+import { handleError } from "@/lib/error";
 import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
 import { UserSetting_GeneralSetting, UserSetting_GeneralSettingSchema } from "@/types/proto/api/v1/user_service_pb";
 import { loadLocale, useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, convertVisibilityToString } from "@/utils/memo";
-import { clearTelegramConfig, loadTelegramConfig } from "@/utils/telegram";
 import { loadTheme } from "@/utils/theme";
 import LocaleSelect from "../LocaleSelect";
 import TelegramSetupDialog from "../TelegramSetupDialog";
@@ -25,12 +26,16 @@ const PreferencesSection = () => {
   const { currentUser, userGeneralSetting: generalSetting, refetchSettings } = useAuth();
   const { mutate: updateUserGeneralSetting, isPending: isUpdatingGeneralSetting } = useUpdateUserGeneralSetting(currentUser?.name);
   const [telegramDialogOpen, setTelegramDialogOpen] = useState(false);
-  const [telegramConfigured, setTelegramConfigured] = useState(() => loadTelegramConfig() !== null);
+  const { config: telegramConfig, save: saveTelegramConfig, isSaving: isSavingTelegram } = useTelegramConfig();
+  const telegramConfigured = telegramConfig !== null;
 
-  const handleClearTelegram = () => {
-    clearTelegramConfig();
-    setTelegramConfigured(false);
-    toast.success(t("telegram.cleared"));
+  const handleClearTelegram = async () => {
+    try {
+      await saveTelegramConfig(null);
+      toast.success(t("telegram.cleared"));
+    } catch (error) {
+      await handleError(error, toast.error, { context: "Clear Telegram settings" });
+    }
   };
 
   const handleLocaleSelectChange = (locale: Locale) => {
@@ -180,7 +185,7 @@ const PreferencesSection = () => {
                 {t("telegram.configure")}
               </Button>
               {telegramConfigured && (
-                <Button variant="ghost" size="sm" onClick={handleClearTelegram}>
+                <Button variant="ghost" size="sm" onClick={handleClearTelegram} disabled={isSavingTelegram}>
                   {t("telegram.clear")}
                 </Button>
               )}
@@ -189,11 +194,7 @@ const PreferencesSection = () => {
         </SettingList>
       </SettingGroup>
 
-      <TelegramSetupDialog
-        open={telegramDialogOpen}
-        onOpenChange={setTelegramDialogOpen}
-        onSaved={() => setTelegramConfigured(true)}
-      />
+      <TelegramSetupDialog open={telegramDialogOpen} onOpenChange={setTelegramDialogOpen} />
     </SettingSection>
   );
 };

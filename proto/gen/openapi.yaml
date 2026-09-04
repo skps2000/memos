@@ -4043,6 +4043,12 @@ components:
                 saveMediaMetadata:
                     type: boolean
                     description: Whether the official client should save metadata from future media uploads.
+                telegramBotToken:
+                    type: string
+                    description: Telegram bot token used by the "send to Telegram" feature.
+                telegramChatId:
+                    type: string
+                    description: Telegram chat id that memos are sent to.
             description: General user settings configuration.
         UserSetting_TagMetadata:
             type: object
