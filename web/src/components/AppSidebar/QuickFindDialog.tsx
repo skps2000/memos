@@ -8,7 +8,7 @@ import { useAppSidebar } from "@/contexts/AppSidebarContext";
 import { type MemoFilter, replaceFiltersByFactor, stringifyFilters, useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoViews } from "@/hooks/useUserQueries";
-import { BUILTIN_TASKS_VIEW_ID, getMemoViewId, isMemoScopeRoute } from "@/lib/memo-views";
+import { getBuiltinMemoView, getMemoViewId, isMemoScopeRoute } from "@/lib/memo-views";
 import { ROUTES } from "@/router/routes";
 import { useTranslate } from "@/utils/i18n";
 
@@ -40,7 +40,9 @@ const QuickFindDialog = () => {
   const viewApplies = isMemoScopeRoute(location.pathname);
   const selectedMemoView = viewApplies ? memoViews.find((item) => getMemoViewId(item.name) === memoView) : undefined;
   const scopeLabel =
-    viewApplies && memoView === BUILTIN_TASKS_VIEW_ID ? t("common.tasks") : selectedMemoView?.title || getScopeLabel(location.pathname, t);
+    viewApplies && getBuiltinMemoView(memoView)
+      ? t(getBuiltinMemoView(memoView)!.labelKey)
+      : selectedMemoView?.title || getScopeLabel(location.pathname, t);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

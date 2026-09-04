@@ -47,14 +47,7 @@ import { type MemoStatsContext, useFilteredMemoStats } from "@/hooks/useFiltered
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useMemoViews, useNotifications, userKeys, useUser } from "@/hooks/useUserQueries";
 import { handleError } from "@/lib/error";
-import {
-  BUILTIN_TASKS_VIEW_ID,
-  getMemoScopePath,
-  getMemoViewId,
-  isMemoScopeRoute,
-  type MemoScope,
-  resolveMemoScope,
-} from "@/lib/memo-views";
+import { BUILTIN_MEMO_VIEWS, getMemoScopePath, getMemoViewId, isMemoScopeRoute, type MemoScope, resolveMemoScope } from "@/lib/memo-views";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/router/routes";
 import { State } from "@/types/proto/api/v1/common_pb";
@@ -79,13 +72,20 @@ const ViewsSection = ({ manageActive = false }: { manageActive?: boolean }) => {
   const currentUser = useCurrentUser();
   const queryClient = useQueryClient();
   const { data: memoViews = [] } = useMemoViews(currentUser?.name);
-  const { memoView: selectedMemoView, setMemoView } = useMemoFilterContext();
+  const { memoView: selectedMemoView, setMemoView, hasActiveFilters, clearAllFilters } = useMemoFilterContext();
   const { setMobileOpen } = useAppSidebar();
   const [deleteTarget, setDeleteTarget] = useState<MemoView>();
   const location = useLocation();
 
   const handleView = (viewId: string) => {
     setMemoView(selectedMemoView === viewId ? undefined : viewId);
+    if (!isMemoScopeRoute(location.pathname)) navigate(ROUTES.HOME);
+    setMobileOpen(false);
+  };
+
+  // "All memos" is the way back from any view, tag, date or search filter.
+  const handleAll = () => {
+    clearAllFilters();
     if (!isMemoScopeRoute(location.pathname)) navigate(ROUTES.HOME);
     setMobileOpen(false);
   };
@@ -129,11 +129,16 @@ const ViewsSection = ({ manageActive = false }: { manageActive?: boolean }) => {
         )
       }
     >
-      <SidebarRow
-        active={!manageActive && selectedMemoView === BUILTIN_TASKS_VIEW_ID}
-        label={t("common.tasks")}
-        onClick={() => handleView(BUILTIN_TASKS_VIEW_ID)}
-      />
+      <SidebarRow active={!manageActive && !hasActiveFilters} icon={ListIcon} label={t("common.all-memos")} onClick={handleAll} />
+      {BUILTIN_MEMO_VIEWS.map((view) => (
+        <SidebarRow
+          key={view.id}
+          active={!manageActive && selectedMemoView === view.id}
+          icon={view.icon}
+          label={t(view.labelKey)}
+          onClick={() => handleView(view.id)}
+        />
+      ))}
       {memoViews.map((memoView) => {
         const id = getMemoViewId(memoView.name);
         const active = !manageActive && selectedMemoView === id;

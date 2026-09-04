@@ -71,7 +71,29 @@ export function MemoFilterProvider({ children }: { children: ReactNode }) {
   const [filters, setFiltersState] = useState<MemoFilter[]>(() => {
     return parseFilterQuery(searchParams.get("filter"));
   });
-  const [memoView, setMemoViewState] = useState<string | undefined>(undefined);
+  // The selected view rides along in the URL (?view=) so it survives a reload and the
+  // back button, and so a filtered list can be bookmarked or shared.
+  const [memoView, setMemoViewState] = useState<string | undefined>(() => searchParams.get("view") || undefined);
+
+  // Sync URL to view when URL changes externally (back/forward, links).
+  useEffect(() => {
+    const viewParam = searchParams.get("view") || undefined;
+    setMemoViewState((prev) => (prev === viewParam ? prev : viewParam));
+  }, [searchParams]);
+
+  const writeViewParam = useCallback(
+    (newMemoView?: string) => {
+      setSearchParams(
+        (params) => {
+          if (newMemoView) params.set("view", newMemoView);
+          else params.delete("view");
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   // Sync URL to state when URL changes externally
   useEffect(() => {
@@ -121,11 +143,16 @@ export function MemoFilterProvider({ children }: { children: ReactNode }) {
   const clearAllFilters = useCallback(() => {
     setFiltersState([]);
     setMemoViewState(undefined);
-  }, []);
+    writeViewParam(undefined);
+  }, [writeViewParam]);
 
-  const setMemoView = useCallback((newMemoView?: string) => {
-    setMemoViewState(newMemoView);
-  }, []);
+  const setMemoView = useCallback(
+    (newMemoView?: string) => {
+      setMemoViewState(newMemoView);
+      writeViewParam(newMemoView);
+    },
+    [writeViewParam],
+  );
 
   const hasFilter = useCallback((filter: MemoFilter) => filters.some((f) => getMemoFilterKey(f) === getMemoFilterKey(filter)), [filters]);
 

@@ -125,6 +125,7 @@
     "add": "Add",
     "admin": "Admin",
     "all": "All",
+    "all-memos": "All memos",
     "archive": "Archive",
     "archived": "Archived",
     "attachments": "Attachments",
@@ -353,10 +354,10 @@
     "direction-desc": "Descending",
     "display-time": "Display Time",
     "filters": {
-      "has-code": "hasCode",
-      "has-link": "hasLink",
-      "has-location": "hasLocation",
-      "has-task-list": "hasTaskList",
+      "has-code": "With code",
+      "has-link": "With links",
+      "has-location": "With location",
+      "has-task-list": "With task list",
       "label": "Filters"
     },
     "compact-mode": "Compact mode",

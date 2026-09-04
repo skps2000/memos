@@ -20,6 +20,7 @@
     "add": "추가",
     "admin": "관리",
     "all": "전체",
+    "all-memos": "전체 메모",
     "archive": "보관 처리",
     "archived": "보관 목록",
     "attachments": "첨부파일",
@@ -188,10 +189,10 @@
     "direction-desc": "내림차순",
     "display-time": "표시 시간",
     "filters": {
-      "has-code": "코드있음",
-      "has-link": "링크있음",
-      "has-location": "위치 있음",
-      "has-task-list": "할일목록있음",
+      "has-code": "코드 포함",
+      "has-link": "링크 포함",
+      "has-location": "위치 포함",
+      "has-task-list": "할 일 목록 포함",
       "label": "필터"
     },
     "compact-mode": "간략 보기",

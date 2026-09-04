@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { type MemoFilter, useMemoFilterContext } from "@/contexts/MemoFilterContext";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useMemoViews } from "@/hooks/useUserQueries";
-import { BUILTIN_TASKS_VIEW_FILTER, BUILTIN_TASKS_VIEW_ID, getMemoViewId } from "@/lib/memo-views";
+import { getBuiltinMemoView, getMemoViewId } from "@/lib/memo-views";
 import { buildMemoCreatorFilter } from "@/lib/resource-names";
 import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
 
@@ -72,8 +72,9 @@ export const buildMemoFilter = ({
     }
   }
 
-  if (currentMemoView === BUILTIN_TASKS_VIEW_ID) {
-    conditions.push(BUILTIN_TASKS_VIEW_FILTER);
+  const builtinView = getBuiltinMemoView(currentMemoView);
+  if (builtinView) {
+    conditions.push(builtinView.filter);
   } else if (selectedMemoViewFilter) {
     conditions.push(selectedMemoViewFilter);
   }
@@ -120,7 +121,7 @@ export const useMemoFilters = (options: UseMemoFiltersOptions = {}): string | un
 
   // Get the selected memo view if needed.
   const selectedMemoViewFilter = useMemo(() => {
-    if (!includeMemoViews || currentMemoView === BUILTIN_TASKS_VIEW_ID) return undefined;
+    if (!includeMemoViews || getBuiltinMemoView(currentMemoView)) return undefined;
     return memoViews.find((memoView) => getMemoViewId(memoView.name) === currentMemoView)?.filter;
   }, [includeMemoViews, currentMemoView, memoViews]);
 
